@@ -7,6 +7,7 @@ Here are the extended prompts for your swarm agents, incorporating the necessary
 
 ### 1. The Evolution of Neuroimaging: From ANOVA to MANOVA to cvMANOVA
 **Extended Prompt:**
+
 ```markdown
 You are building an interactive web widget for a neuroscience tutorial website using Vanilla HTML, JS, and CSS. The goal is to explain the evolution from univariate ANOVA to MANOVA, to cvMANOVA. 
 
@@ -21,6 +22,7 @@ Ensure it looks modern and matches a dark-mode, glassmorphism aesthetic. Output 
 
 ### 2. cvMANOVA vs. Machine Learning Classification (SVM)
 **Extended Prompt:**
+
 ```markdown
 Create an interactive comparison between cvMANOVA and a Support Vector Machine (SVM) decoder. Build a 2D scatter plot visualization using JavaScript (e.g., D3 or Chart.js) or HTML5 Canvas. Give the user sliders for 'Noise Variance' and 'Number of Training Trials'.
 
@@ -35,6 +37,7 @@ Include UI elements clearly contrasting the limitations of non-linear classifica
 
 ### 3. Unpacking the Math: The MGLM, Mahalanobis Distance, and Negative Values
 **Extended Prompt:**
+
 ```markdown
 Create an interactive JS widget explaining the mathematics of the Multivariate General Linear Model (MGLM) and pattern distinctness ($D$). 
 
@@ -51,6 +54,7 @@ Ensure the math is rendered beautifully (e.g., using MathJax or KaTeX) and integ
 
 ### 4. Analyzing Factorial Designs and Pattern Consistency
 **Extended Prompt:**
+
 ```markdown
 Build an interactive tutorial widget that explains how cvMANOVA handles complex factorial designs (e.g., a 2x2 design matrix). 
 
@@ -66,6 +70,7 @@ Build a UI showing a 2x2 grid representing experimental conditions. Let the user
 
 ### 5. Designing a cvMANOVA Study: GLMs, Autocorrelation, and Searchlights
 **Extended Prompt:**
+
 ```markdown
 Build an interactive guide for designing a cvMANOVA study. Create a simulation of a 3D brain slice (a 2D grid of clickable pixels). 
 
@@ -79,6 +84,7 @@ Give the user three controls: 'Searchlight Radius', 'Nuisance Regressors', and '
 
 **6. Code Tutorial: Implementing cvMANOVA in MATLAB and Python**
 **Extended Prompt:**
+
 ```markdown
 Build a split-pane interactive code viewer widget. On the left, display the MATLAB implementation (SPM integrated), and on the right, display the Python implementation (nilearn integrated). 
 
@@ -93,6 +99,7 @@ Provide interactive 'Run' buttons that simulate the output of extracting peak vo
 
 **7. The Importance of Noise Covariance**
 **Extended Prompt:**
+
 ```markdown
 Create a 2D interactive scatter plot demonstrating the importance of noise covariance. 
 
@@ -108,6 +115,7 @@ Add an interactive slider that controls the 'Spatial Correlation of Noise' betwe
 
 **8. Cross-Validated Mahalanobis (cvMANOVA) vs. Linear Discriminant Contrast (LDC)**
 **Extended Prompt:**
+
 ```markdown
 Build a widget comparing raw cross-validated distances to cvMANOVA's standardized inferential framework. 
 
@@ -123,6 +131,7 @@ Create a visualization where the user can toggle between raw distance equations 
 
 **9. Power Analysis & Sample Size Selection**
 **Extended Prompt:**
+
 ```markdown
 Create an interactive Power Analysis calculator for fMRI studies using cvMANOVA. 
 
@@ -138,6 +147,7 @@ Here are the extended prompts for the paper walkthrough case studies, enriched w
 
 ### 10. Decoding the "Invisible": Spatial vs. Non-Spatial Auditory Working Memory (Erhart et al., 2021)
 **Extended Prompt:**
+
 ```markdown
 Build an interactive case study widget for the paper *Erhart et al., 2021*. The goal is to show the high multivariate sensitivity of cvMANOVA using a searchlight approach (radius = 3 voxels).
 
@@ -152,6 +162,7 @@ Add clickable hotspots that explicitly state: 'Because MVPA evaluates the covari
 
 ### 11. Disentangling Correlated Variables in Time: Abstract Choice Representations (Quinn et al., 2024)
 **Extended Prompt:**
+
 ```markdown
 Build an interactive MEG time-series visualization for the paper *Quinn et al., 2024*. Use a line chart UI spanning from Stimulus Onset (0s) to the Go-Cue (2.0s) and into the response period.
 
@@ -164,6 +175,7 @@ Allow the user to toggle MGLM regressors ON and OFF to isolate 'Perceptual Abstr
 
 ### 12. Quantifying Memory Remoteness using Pattern Distinctness (Santangelo et al., 2020)
 **Extended Prompt:**
+
 ```markdown
 Create a regression-style interactive visualization based on *Santangelo et al., 2020*. 
 
@@ -177,6 +189,7 @@ Build a scatterplot plotting 'Pattern Distinctness ($D$) in the left vmPFC' (Y-a
 
 ### 13. Investigating Supramodal Codes and Interpreting Null Results (Rizza et al., 2024)
 **Extended Prompt:**
+
 ```markdown
 Build an interactive widget explaining Bayesian statistics applied to cvMANOVA, modeled on *Rizza et al., 2024*. The focus is on rigorously interpreting 'null' results. 
 
@@ -190,6 +203,7 @@ Here are the extended prompts for your swarm agents, enriched with the necessary
 
 ### 14. Testing the Generalization of Neural Representations Across Time
 **Extended Prompt:**
+
 ```markdown
 Build an interactive Cross-Temporal Decoding Matrix (Time x Time heatmap) using Canvas or JS based on the methodological frameworks of *Voigtlaender et al. (2023)* and *Sandhaeger & Siegel (2023)*. 
 
@@ -211,6 +225,7 @@ Include a toggle button. When clicked, overlay a theoretical "null hypothesis of
 
 ### 15. Case Study Recap: Allefeld & Haynes (2014) Searchlight
 **Extended Prompt:**
+
 ```markdown
 Build an interactive walkthrough of the foundational *Allefeld & Haynes (2014)* searchlight methodology. Create a step-by-step scrollytelling or carousel widget. The user must click 'Next' and actively build the final searchlight map by understanding each foundational logic.
 
