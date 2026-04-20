@@ -3,44 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cvMANOVA vs Standard MVPA</title>
+    <title>Why Cross-Validation? | cvMANOVA Tutorial</title>
+    <meta name="description" content="Discover why cross-validation removes the positive bias of standard MANOVA by exploring null distributions interactively.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        .toggle-bar { display: flex; gap: 0.5rem; margin-bottom: 2rem; background: rgba(255,255,255,0.05); border-radius: 100px; padding: 0.3rem; width: fit-content; }
+        .tog-btn {
+            padding: 0.55rem 1.4rem; border-radius: 100px; border: none; background: transparent;
+            color: var(--text-secondary); cursor: pointer; font-family: inherit; font-size: 0.95rem; transition: var(--transition);
+        }
+        .tog-btn.active { background: var(--card-bg); color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .dist-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .dist-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 24px; padding: 1.5rem; backdrop-filter: var(--glass-blur);
+        }
+        canvas { width: 100%; border-radius: 10px; }
+        .controls { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; }
+        .ctrl-row { display: flex; flex-direction: column; gap: 0.4rem; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-secondary); }
+        input[type=range] {
+            width: 100%; appearance: none; height: 5px; border-radius: 10px;
+            background: rgba(255,255,255,0.1); outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none; width: 17px; height: 17px; border-radius: 50%;
+            background: var(--accent-secondary); cursor: pointer;
+        }
+        .sim-btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.8rem 1.8rem; border-radius: 14px; border: none;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: #fff; font-family: inherit; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: var(--transition);
+        }
+        .sim-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.35); }
+        .kpi-row { display: flex; gap: 1rem; margin: 1.5rem 0; }
+        .kpi { flex: 1; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 1rem; text-align: center; }
+        .kpi-val { font-size: 1.5rem; font-weight: 800; }
+        .kpi-lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing:.05em; color: var(--text-secondary); }
+        .callout {
+            background: rgba(59,130,246,0.1); border-left: 3px solid var(--accent-primary);
+            border-radius: 0 12px 12px 0; padding: 1.2rem; font-size: 0.92rem; color: var(--text-secondary); margin: 1.5rem 0;
+        }
+        .bad-stat { color: #f87171; }
+        .good-stat { color: #34d399; }
+        @media(max-width:800px){ .dist-row { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
     <div class="background-mesh"></div>
-    
     <nav class="navbar">
         <a href="../index.html" class="back-button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Back to Home
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Tutorials
         </a>
+        <div class="tutorial-id">Tutorial 05</div>
     </nav>
 
     <main class="tutorial-content">
-        <h1 class="glow-title" style="font-size: 3rem;">cvMANOVA vs Standard MVPA</h1>
-        <p class="subtitle" style="margin-bottom: 2rem;">Visualize how cross-validation handles noise covariance and noise correlation compared to a standard classifier.</p>
+        <header>
+            <h1 class="glow-title">Why Cross-Validation?</h1>
+            <p class="subtitle">See how standard MANOVA is always positively biased under the null — and how cvMANOVA corrects this.</p>
+        </header>
 
-        <div class="simulation-placeholder">
-            [ Interactive Simulation Widget Goes Here ]
+        <div class="callout">
+            <strong>The Problem:</strong> Standard MANOVA estimates the distance between conditions using the same data used to fit the model.
+            Because noise causes random differences between group means, the estimated effect is <em>always &gt; 0</em>, even when there is truly nothing there.
+            <br><br>
+            <strong>The Solution:</strong> Cross-validation measures patterns on held-out data, making the estimator <em>unbiased</em>. Under the null, the distribution centers exactly at 0, and false positive rate is properly controlled.
         </div>
 
-        <section style="margin-top: 3rem; line-height: 1.8;">
-            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Concept Overview</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Standard Machine Learning approaches like Support Vector Machines (SVMs) often ignore the specific correlation 
-                structure of the noise between different voxels. cvMANOVA explicitly incorporates this through the noise covariance matrix.
-            </p>
-            <p style="color: var(--text-secondary);">
-                In this interactive tutorial, you will be able to adjust the <strong>noise variance</strong> and <strong>spatial correlation</strong>
-                to see exactly when standard Euclidean distance breaks down and produces false positives.
-            </p>
+        <div class="controls">
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1.5rem;">
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span>Number of Voxels (p)</span><span id="pvLabel">30</span></div>
+                    <input type="range" id="pvSlider" min="5" max="150" step="5" value="30" oninput="document.getElementById('pvLabel').textContent=this.value;">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span>Error df (runs × trials)</span><span id="dfLabel">20</span></div>
+                    <input type="range" id="dfSlider" min="5" max="100" step="5" value="20" oninput="document.getElementById('dfLabel').textContent=this.value;">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span>Simulations (N)</span><span id="simLabel">500</span></div>
+                    <input type="range" id="simSlider" min="100" max="2000" step="100" value="500" oninput="document.getElementById('simLabel').textContent=this.value;">
+                </div>
+            </div>
+        </div>
+
+        <button class="sim-btn" onclick="simulate()">▶ Simulate Null Distributions</button>
+
+        <div class="kpi-row">
+            <div class="kpi">
+                <div class="kpi-val bad-stat" id="manovaKpi">—</div>
+                <div class="kpi-lbl">MANOVA avg. null D̂</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val good-stat" id="cvKpi">—</div>
+                <div class="kpi-lbl">cvMANOVA avg. null D̂</div>
+            </div>
+            <div class="kpi">
+                <div class="kpi-val" id="biasKpi" style="color:#fbbf24;">—</div>
+                <div class="kpi-lbl">Bias (MANOVA − cvMANOVA)</div>
+            </div>
+        </div>
+
+        <div class="dist-row">
+            <div class="dist-box">
+                <h3 style="margin-bottom:0.5rem; color:#f87171;">Standard MANOVA</h3>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">Always biased positive — even when no true signal exists.</p>
+                <canvas id="manovaCanvas" width="380" height="250"></canvas>
+            </div>
+            <div class="dist-box">
+                <h3 style="margin-bottom:0.5rem; color:#34d399;">cvMANOVA (Cross-Validated)</h3>
+                <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">Centered at zero — unbiased even under the null.</p>
+                <canvas id="cvCanvas" width="380" height="250"></canvas>
+            </div>
+        </div>
+
+        <section style="margin-top:3rem;">
+            <h2 style="margin-bottom:1rem;">The Key Insight</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>Bias Grows with p/df</h2>
+                        <p>Increase voxels (p) or decrease error df using the sliders above. Watch MANOVA's null distribution shift further right — the bias explodes.</p>
+                    </div>
+                </div>
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>Negative D̂ is Good News</h2>
+                        <p>~50% of cvMANOVA estimates fall below 0 under the null. This is expected and correct — it confirms the estimator is truly unbiased.</p>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
+    <script>
+    function randn() {
+        let u=0,v=0;
+        while(u===0)u=Math.random();
+        while(v===0)v=Math.random();
+        return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+
+    function drawHist(canvasId, samples, color, label) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='rgba(15,23,42,0.95)';
+        ctx.fillRect(0,0,W,H);
+
+        if(samples.length === 0) return;
+        const mn = Math.min(...samples), mx = Math.max(...samples);
+        const range = mx - mn || 1;
+        const bins = 30;
+        const hist = new Array(bins).fill(0);
+        samples.forEach(v => {
+            const b = Math.min(bins-1, Math.floor((v-mn)/range*bins));
+            hist[b]++;
+        });
+        const maxH = Math.max(...hist);
+        const pad = {l:40,r:20,t:20,b:40};
+        const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+        const barW = cW/bins;
+
+        hist.forEach((h,i)=>{
+            const barH = h/maxH*cH;
+            ctx.fillStyle = color;
+            ctx.fillRect(pad.l+i*barW, pad.t+cH-barH, barW-1, barH);
+        });
+
+        // Zero line
+        if(mn<0 && mx>0) {
+            const zeroX = pad.l + (-mn/range)*cW;
+            ctx.beginPath(); ctx.moveTo(zeroX, pad.t); ctx.lineTo(zeroX, pad.t+cH);
+            ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='10px Outfit'; ctx.textAlign='center';
+            ctx.fillText('0', zeroX, pad.t+cH+16);
+        }
+        // Mean line
+        const mean = samples.reduce((a,b)=>a+b,0)/samples.length;
+        const meanX = pad.l + ((mean-mn)/range)*cW;
+        ctx.beginPath(); ctx.moveTo(meanX, pad.t); ctx.lineTo(meanX, pad.t+cH);
+        ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='#fbbf24'; ctx.font='11px Outfit'; ctx.textAlign='center';
+        ctx.fillText(`mean = ${mean.toFixed(2)}`, meanX, pad.t+12);
+
+        // Axis labels
+        ctx.fillStyle='rgba(255,255,255,0.3)'; ctx.font='10px Outfit';
+        ctx.textAlign='left'; ctx.fillText(mn.toFixed(1), pad.l, pad.t+cH+16);
+        ctx.textAlign='right'; ctx.fillText(mx.toFixed(1), pad.l+cW, pad.t+cH+16);
+        ctx.textAlign='center'; ctx.fillText('D̂ value', pad.l+cW/2, H-4);
+    }
+
+    function simulate() {
+        const p = parseInt(document.getElementById('pvSlider').value);
+        const df = parseInt(document.getElementById('dfSlider').value);
+        const N = parseInt(document.getElementById('simSlider').value);
+
+        const manovaSamples = [];
+        const cvSamples = [];
+
+        for(let i=0; i<N; i++) {
+            // Standard MANOVA: biased by p/df under null
+            const bias = p / df;
+            const variance = Math.sqrt(2*p) / df;
+            manovaSamples.push(bias + randn()*variance);
+
+            // cvMANOVA: centered at 0 under null
+            const cvVariance = Math.sqrt(2*p/df);
+            cvSamples.push(randn()*cvVariance);
+        }
+
+        const manovaAvg = manovaSamples.reduce((a,b)=>a+b,0)/N;
+        const cvAvg = cvSamples.reduce((a,b)=>a+b,0)/N;
+        const bias = manovaAvg - cvAvg;
+
+        document.getElementById('manovaKpi').textContent = manovaAvg.toFixed(2);
+        document.getElementById('cvKpi').textContent = cvAvg.toFixed(3);
+        document.getElementById('biasKpi').textContent = bias.toFixed(2);
+
+        drawHist('manovaCanvas', manovaSamples, 'rgba(248,113,113,0.55)', 'MANOVA');
+        drawHist('cvCanvas', cvSamples, 'rgba(52,211,153,0.55)', 'cvMANOVA');
+    }
+
+    simulate();
+    </script>
 </body>
 </html>

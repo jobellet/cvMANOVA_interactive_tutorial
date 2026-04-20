@@ -3,44 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cvMANOVA vs Standard MVPA</title>
+    <title>Information Mapping (Searchlight) | cvMANOVA Tutorial</title>
+    <meta name="description" content="Simulate a cvMANOVA searchlight analysis on a 2D brain slice and see how D-values emerge spatially.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        .sim-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .sim-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 24px; padding: 1.5rem; backdrop-filter: var(--glass-blur);
+        }
+        canvas { width: 100%; border-radius: 12px; }
+        .controls { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; }
+        .ctrl-row { display: flex; flex-direction: column; gap: 0.4rem; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-secondary); }
+        input[type=range] {
+            width: 100%; appearance: none; height: 5px; border-radius: 10px;
+            background: rgba(255,255,255,0.1); outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none; width: 17px; height: 17px; border-radius: 50%;
+            background: var(--accent-primary); cursor: pointer;
+        }
+        .run-btn {
+            width: 100%; padding: 1rem; border-radius: 14px; border: none;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: #fff; font-family: inherit; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: var(--transition); margin-top: 0.5rem;
+        }
+        .run-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(59,130,246,0.35); }
+        .run-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .callout {
+            background: rgba(59,130,246,0.10); border-left: 3px solid var(--accent-primary);
+            border-radius: 0 12px 12px 0; padding: 1.2rem; font-size: 0.9rem; color: var(--text-secondary);
+        }
+        .legend { display: flex; gap: 1rem; font-size: 0.82rem; color: var(--text-secondary); flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+        .legend-bar { width: 40px; height: 10px; border-radius: 4px; }
+        .kpi-row { display: flex; gap: 1rem; margin: 1rem 0; }
+        .kpi { flex: 1; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.8rem; text-align: center; }
+        .kpi-val { font-size: 1.5rem; font-weight: 800; color: #a5b4fc; }
+        .kpi-lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); }
+        @media(max-width:800px){ .sim-pair { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
     <div class="background-mesh"></div>
-    
     <nav class="navbar">
         <a href="../index.html" class="back-button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Back to Home
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Tutorials
         </a>
+        <div class="tutorial-id">Tutorial 04</div>
     </nav>
 
     <main class="tutorial-content">
-        <h1 class="glow-title" style="font-size: 3rem;">cvMANOVA vs Standard MVPA</h1>
-        <p class="subtitle" style="margin-bottom: 2rem;">Visualize how cross-validation handles noise covariance and noise correlation compared to a standard classifier.</p>
+        <header>
+            <h1 class="glow-title">Information Mapping</h1>
+            <p class="subtitle">Move a spherical searchlight across a synthetic 2D brain and watch D-values emerge.</p>
+        </header>
 
-        <div class="simulation-placeholder">
-            [ Interactive Simulation Widget Goes Here ]
+        <div class="callout" style="margin-bottom:2rem;">
+            The <strong>searchlight</strong> technique moves a small sphere (radius r) through every location in the brain. At each position, cvMANOVA computes pattern distinctness D — yielding a whole-brain <em>information map</em> where hotter colors indicate more decodable representations.
         </div>
 
-        <section style="margin-top: 3rem; line-height: 1.8;">
-            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Concept Overview</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Standard Machine Learning approaches like Support Vector Machines (SVMs) often ignore the specific correlation 
-                structure of the noise between different voxels. cvMANOVA explicitly incorporates this through the noise covariance matrix.
-            </p>
-            <p style="color: var(--text-secondary);">
-                In this interactive tutorial, you will be able to adjust the <strong>noise variance</strong> and <strong>spatial correlation</strong>
-                to see exactly when standard Euclidean distance breaks down and produces false positives.
-            </p>
+        <div class="controls">
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Searchlight Radius (voxels)</span><span id="radLabel">3</span></div>
+                <input type="range" id="radSlider" min="1" max="6" step="1" value="3" oninput="document.getElementById('radLabel').textContent=this.value">
+            </div>
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Number of Runs (for CV)</span><span id="runLabel">4</span></div>
+                <input type="range" id="runSlider" min="2" max="10" step="1" value="4" oninput="document.getElementById('runLabel').textContent=this.value">
+            </div>
+        </div>
+        <button class="run-btn" id="runBtn" onclick="runSearchlight()">▶ Run Searchlight Analysis</button>
+
+        <div class="kpi-row" style="margin-top:1.5rem;">
+            <div class="kpi"><div class="kpi-val" id="peakKpi">—</div><div class="kpi-lbl">Peak D̂</div></div>
+            <div class="kpi"><div class="kpi-val" id="coverKpi">—</div><div class="kpi-lbl">% Brain Significant</div></div>
+            <div class="kpi"><div class="kpi-val" id="voxelsKpi">—</div><div class="kpi-lbl">Voxels/Sphere</div></div>
+        </div>
+
+        <div class="sim-pair" style="margin-top:1.5rem;">
+            <div class="sim-box">
+                <h3 style="margin-bottom:0.8rem; font-size:1rem;">Ground Truth Signal</h3>
+                <canvas id="truthCanvas" width="300" height="300"></canvas>
+                <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.5rem;">Hidden true signal embedded in the brain slice.</p>
+            </div>
+            <div class="sim-box">
+                <h3 style="margin-bottom:0.8rem; font-size:1rem;">cvMANOVA D-map</h3>
+                <canvas id="dmapCanvas" width="300" height="300"></canvas>
+                <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.5rem; min-height:2rem;" id="progressText">Press Run to compute the searchlight.</p>
+            </div>
+        </div>
+
+        <div class="legend" style="margin-top:1.5rem;">
+            <div class="legend-item">
+                <div class="legend-bar" style="background:linear-gradient(to right,#0f172a,#3b82f6,#a5b4fc,#fbbf24,#f87171)"></div>
+                <span>D-value scale (cool → hot)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-bar" style="background:rgba(255,255,255,0.15)"></div>
+                <span>Brain boundary (no signal)</span>
+            </div>
+        </div>
+
+        <section style="margin-top:3rem;">
+            <h2 style="margin-bottom:1rem;">Key Observation</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>Radius Too Small</h2>
+                        <p>Few voxels per sphere → covariance estimate is noisy → D values are highly variable. Signal regions still emerge but noisily.</p>
+                    </div>
+                </div>
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>Radius Too Large</h2>
+                        <p>More voxels than df_error → covariance becomes rank-deficient. Spatial specificity is also lost (blurring).</p>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
+    <script>
+    const GRID = 20;
+    const CW = 300;
+    const cellSize = CW / GRID;
+
+    // Create a synthetic brain mask (ellipse)
+    function inBrain(gx, gy) {
+        const cx = GRID/2, cy = GRID/2;
+        const rx = GRID*0.45, ry = GRID*0.42;
+        return ((gx-cx)/rx)**2 + ((gy-cy)/ry)**2 <= 1;
+    }
+
+    // Ground truth signal blobs
+    const signalMap = [];
+    for(let y=0; y<GRID; y++) {
+        signalMap.push([]);
+        for(let x=0; x<GRID; x++) {
+            // Two blobs
+            const d1 = Math.hypot(x-6, y-7);
+            const d2 = Math.hypot(x-13, y-13);
+            const s = Math.exp(-d1*d1/8)*3 + Math.exp(-d2*d2/5)*2.5;
+            signalMap[y].push(inBrain(x,y) ? s : 0);
+        }
+    }
+
+    function drawTruth() {
+        const canvas = document.getElementById('truthCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0,0,CW,CW);
+        const maxS = 3;
+        for(let y=0; y<GRID; y++) {
+            for(let x=0; x<GRID; x++) {
+                const s = signalMap[y][x];
+                if(!inBrain(x,y)) { ctx.fillStyle='rgba(15,23,42,0.95)'; }
+                else {
+                    const t = Math.min(1, s/maxS);
+                    const r = Math.round(30 + t*225);
+                    const g = Math.round(41 + t*112);
+                    const b = Math.round(59 + t*93);
+                    ctx.fillStyle = `rgba(${r},${g},${b},1)`;
+                }
+                ctx.fillRect(x*cellSize, y*cellSize, cellSize, cellSize);
+            }
+        }
+        // Brain outline
+        ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.ellipse(CW/2, CW/2, CW*0.45, CW*0.42, 0, 0, Math.PI*2);
+        ctx.stroke();
+    }
+
+    function randn() {
+        let u=0,v=0;
+        while(u===0)u=Math.random();
+        while(v===0)v=Math.random();
+        return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+
+    async function runSearchlight() {
+        const btn = document.getElementById('runBtn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Computing…';
+        const radius = parseInt(document.getElementById('radSlider').value);
+        const runs = parseInt(document.getElementById('runSlider').value);
+
+        const canvas = document.getElementById('dmapCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle='rgba(15,23,42,0.95)'; ctx.fillRect(0,0,CW,CW);
+
+        const dmap = [];
+        let peak = -Infinity, sigCount = 0, totalBrain = 0;
+
+        for(let gy=0; gy<GRID; gy++) {
+            dmap.push([]);
+            for(let gx=0; gx<GRID; gx++) {
+                if(!inBrain(gx,gy)) { dmap[gy].push(null); continue; }
+                totalBrain++;
+                // Collect voxels in searchlight
+                const voxels = [];
+                for(let dy=-radius; dy<=radius; dy++) {
+                    for(let dx=-radius; dx<=radius; dx++) {
+                        const nx=gx+dx, ny=gy+dy;
+                        if(nx<0||ny<0||nx>=GRID||ny>=GRID) continue;
+                        if(!inBrain(nx,ny)) continue;
+                        if(Math.hypot(dx,dy)<=radius) voxels.push({x:nx,y:ny});
+                    }
+                }
+                const p = voxels.length;
+                // Compute cross-validated D estimate
+                let D = 0;
+                for(let r=0; r<runs; r++) {
+                    let trainDist=0, testDist=0;
+                    voxels.forEach(v=>{
+                        const sig = signalMap[v.y][v.x];
+                        const noise = 1.2;
+                        trainDist += (sig + randn()*noise)**2;
+                        testDist  += (sig + randn()*noise)**2;
+                    });
+                    D += Math.sqrt(trainDist/p) * Math.sqrt(testDist/p) - noise_penalty(p, runs);
+                }
+                D = D / runs;
+                dmap[gy].push(D);
+                if(D > peak) peak = D;
+                if(D > 0.3) sigCount++;
+            }
+
+            // Yield to browser each row
+            await new Promise(r => setTimeout(r, 0));
+            document.getElementById('progressText').textContent = `Computing… row ${gy+1}/${GRID}`;
+        }
+
+        function noise_penalty(p, runs) { return 0.8 / runs; }
+
+        // Draw D-map
+        const maxD = Math.max(peak, 0.01);
+        for(let gy=0; gy<GRID; gy++) {
+            for(let gx=0; gx<GRID; gx++) {
+                const d = dmap[gy][gx];
+                if(d === null) { ctx.fillStyle='rgba(15,23,42,0.95)'; }
+                else {
+                    const t = Math.max(0, Math.min(1, d/maxD));
+                    ctx.fillStyle = dToColor(t);
+                }
+                ctx.fillRect(gx*cellSize, gy*cellSize, cellSize, cellSize);
+            }
+        }
+        ctx.strokeStyle='rgba(255,255,255,0.15)'; ctx.lineWidth=1;
+        ctx.beginPath();
+        ctx.ellipse(CW/2, CW/2, CW*0.45, CW*0.42, 0, 0, Math.PI*2);
+        ctx.stroke();
+
+        // Voxels per sphere
+        let sampleVox = 0;
+        for(let dy=-radius; dy<=radius; dy++) for(let dx=-radius; dx<=radius; dx++) if(Math.hypot(dx,dy)<=radius) sampleVox++;
+
+        document.getElementById('peakKpi').textContent = peak.toFixed(2);
+        document.getElementById('coverKpi').textContent = ((sigCount/totalBrain)*100).toFixed(0) + '%';
+        document.getElementById('voxelsKpi').textContent = sampleVox;
+        document.getElementById('progressText').textContent = 'Done! Hot colors = more information.';
+
+        btn.disabled = false;
+        btn.textContent = '↺ Rerun with New Settings';
+    }
+
+    function dToColor(t) {
+        // Cool (dark blue) → blue → purple → orange → red
+        const stops = [
+            [15,23,42], [30,100,200], [100,80,200], [251,191,36], [248,113,113]
+        ];
+        const seg = Math.min(stops.length-2, Math.floor(t*(stops.length-1)));
+        const local = t*(stops.length-1) - seg;
+        const a = stops[seg], b = stops[seg+1];
+        const r = Math.round(a[0]+(b[0]-a[0])*local);
+        const g = Math.round(a[1]+(b[1]-a[1])*local);
+        const bv= Math.round(a[2]+(b[2]-a[2])*local);
+        return `rgb(${r},${g},${bv})`;
+    }
+
+    drawTruth();
+    </script>
 </body>
 </html>

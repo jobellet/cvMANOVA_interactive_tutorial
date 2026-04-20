@@ -3,44 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cvMANOVA vs Standard MVPA</title>
+    <title>cvMANOVA vs. LDC | Interactive Tutorial</title>
+    <meta name="description" content="Compare raw cross-validated Mahalanobis distance (LDC) to cvMANOVA's standardized Ds statistic.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        .view-toggle { display: flex; gap: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 100px; padding: 0.3rem; width: fit-content; margin-bottom: 2rem; }
+        .vtog {
+            padding: 0.55rem 1.4rem; border-radius: 100px; border: none; background: transparent;
+            color: var(--text-secondary); cursor: pointer; font-family: inherit; font-size: 0.92rem; transition: var(--transition);
+        }
+        .vtog.active { background: var(--card-bg); color: var(--text-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .sim-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 24px; padding: 1.8rem; backdrop-filter: var(--glass-blur);
+        }
+        canvas { width: 100%; border-radius: 10px; }
+        .controls { display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; }
+        .ctrl-row { display: flex; flex-direction: column; gap: 0.4rem; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-secondary); }
+        input[type=range] {
+            width: 100%; appearance: none; height: 5px; border-radius: 10px;
+            background: rgba(255,255,255,0.1); outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none; width: 17px; height: 17px; border-radius: 50%;
+            background: var(--accent-primary); cursor: pointer;
+        }
+        .kpi-row { display: flex; gap: 1rem; margin: 1.5rem 0; }
+        .kpi { flex: 1; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 0.9rem; text-align: center; }
+        .kpi-val { font-size: 1.5rem; font-weight: 800; }
+        .kpi-lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing:.05em; color: var(--text-secondary); }
+        .formula-box {
+            background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25);
+            border-radius: 16px; padding: 1.4rem; font-size: 0.92rem;
+            color: var(--text-secondary); margin: 1.5rem 0;
+        }
+        .formula-box code { color: #a5b4fc; font-size: 1rem; display: block; margin: 0.5rem 0; }
+        .callout {
+            background: rgba(59,130,246,0.1); border-left: 3px solid var(--accent-primary);
+            border-radius: 0 12px 12px 0; padding: 1.2rem; font-size: 0.9rem; color: var(--text-secondary); margin: 1.5rem 0;
+        }
+        @media(max-width:800px){ .two-col { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
     <div class="background-mesh"></div>
-    
     <nav class="navbar">
         <a href="../index.html" class="back-button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Back to Home
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Tutorials
         </a>
+        <div class="tutorial-id">Tutorial 07</div>
     </nav>
 
     <main class="tutorial-content">
-        <h1 class="glow-title" style="font-size: 3rem;">cvMANOVA vs Standard MVPA</h1>
-        <p class="subtitle" style="margin-bottom: 2rem;">Visualize how cross-validation handles noise covariance and noise correlation compared to a standard classifier.</p>
+        <header>
+            <h1 class="glow-title">cvMANOVA vs. LDC</h1>
+            <p class="subtitle">Why standardization matters: turning raw distances into a valid inferential map.</p>
+        </header>
 
-        <div class="simulation-placeholder">
-            [ Interactive Simulation Widget Goes Here ]
+        <div class="formula-box">
+            Both metrics are <strong>unbiased estimators</strong> under the null hypothesis. The key difference is <em>standardization</em>:
+            <code>LDC (raw): D̂ = cross-validated Mahalanobis distance</code>
+            <code>cvMANOVA: D̂ₛ = D̂ / √p</code>
+            where <em>p</em> is the number of voxels in the searchlight sphere. Dividing by √p removes the dependency on sphere size.
         </div>
 
-        <section style="margin-top: 3rem; line-height: 1.8;">
-            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Concept Overview</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Standard Machine Learning approaches like Support Vector Machines (SVMs) often ignore the specific correlation 
-                structure of the noise between different voxels. cvMANOVA explicitly incorporates this through the noise covariance matrix.
-            </p>
-            <p style="color: var(--text-secondary);">
-                In this interactive tutorial, you will be able to adjust the <strong>noise variance</strong> and <strong>spatial correlation</strong>
-                to see exactly when standard Euclidean distance breaks down and produces false positives.
-            </p>
+        <div class="view-toggle">
+            <button class="vtog active" onclick="setView('raw',this)">Raw Distance (LDC)</button>
+            <button class="vtog" onclick="setView('std',this)">Standardized D̂ₛ (cvMANOVA)</button>
+        </div>
+
+        <div class="controls">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1.5rem;">
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span>True Effect (D)</span><span id="effLabel">2.0</span></div>
+                    <input type="range" id="effSlider" min="0" max="5" step="0.1" value="2.0" oninput="document.getElementById('effLabel').textContent=parseFloat(this.value).toFixed(1); redraw();">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span>Sphere voxels (p)</span><span id="pLabel">50</span></div>
+                    <input type="range" id="pSlider" min="5" max="200" step="5" value="50" oninput="document.getElementById('pLabel').textContent=this.value; redraw();">
+                </div>
+                <div class="ctrl-row">
+                    <div class="ctrl-label"><span>Noise Variance (σ²)</span><span id="noiseLabel">1.0</span></div>
+                    <input type="range" id="noiseSlider" min="0.2" max="4" step="0.1" value="1.0" oninput="document.getElementById('noiseLabel').textContent=parseFloat(this.value).toFixed(1); redraw();">
+                </div>
+            </div>
+        </div>
+
+        <div class="kpi-row">
+            <div class="kpi"><div class="kpi-val" id="rawKpi" style="color:#fbbf24;">—</div><div class="kpi-lbl">Raw D̂ (LDC)</div></div>
+            <div class="kpi"><div class="kpi-val" id="stdKpi" style="color:#a5b4fc;">—</div><div class="kpi-lbl">Standardized D̂ₛ</div></div>
+            <div class="kpi"><div class="kpi-val" id="nullVarKpi" style="color:#f87171;">—</div><div class="kpi-lbl">Null Variance ∝ p</div></div>
+        </div>
+
+        <div class="two-col">
+            <div class="sim-box">
+                <h3 id="leftTitle" style="margin-bottom:0.5rem;">Null Distribution: Raw D̂ (varies with p)</h3>
+                <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:1rem;" id="leftSub">Distributions shift and scale as you change the number of voxels.</p>
+                <canvas id="leftCanvas" width="380" height="280"></canvas>
+            </div>
+            <div class="sim-box">
+                <h3 id="rightTitle" style="margin-bottom:0.5rem;">Searchlight Edge Effect</h3>
+                <p style="font-size:0.83rem; color:var(--text-secondary); margin-bottom:1rem;">Spheres at the brain boundary have fewer voxels — this creates inhomogeneous null variance.</p>
+                <canvas id="rightCanvas" width="380" height="280"></canvas>
+            </div>
+        </div>
+
+        <div class="callout" style="margin-top:2rem;">
+            <strong>Why this matters for inference:</strong> If you threshold a raw D̂ map, brain-edge voxels (smaller p) will appear artificially significant because their null distribution has lower variance. By standardizing with 1/√p, cvMANOVA creates a <em>homogeneous</em> map suitable for group-level statistics.
+        </div>
+
+        <section style="margin-top:3rem;">
+            <h2 style="margin-bottom:1rem;">Summary</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>LDC (Raw)</h2>
+                        <p>Unbiased estimator of Mahalanobis distance. Good for comparing two regions with equal sphere sizes. Cannot be thresholded fairly across the whole brain.</p>
+                    </div>
+                </div>
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>cvMANOVA (D̂ₛ)</h2>
+                        <p>Divides by √p to normalize null variance. Enables valid whole-brain statistical maps and group-level inference with a single threshold.</p>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
+    <script>
+    let currentView = 'raw';
+
+    function setView(v, btn) {
+        currentView = v;
+        document.querySelectorAll('.vtog').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        redraw();
+    }
+
+    function randn() {
+        let u=0,v=0;
+        while(u===0)u=Math.random();
+        while(v===0)v=Math.random();
+        return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+
+    function drawDist(canvasId, samples, color, zeroLine=true) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='rgba(15,23,42,0.95)'; ctx.fillRect(0,0,W,H);
+
+        const mn = Math.min(...samples), mx = Math.max(...samples);
+        const range = mx - mn || 1;
+        const bins = 30;
+        const hist = new Array(bins).fill(0);
+        samples.forEach(v => { const b = Math.min(bins-1,Math.floor((v-mn)/range*bins)); hist[b]++; });
+        const maxH = Math.max(...hist);
+        const pad = {l:35,r:15,t:25,b:35};
+        const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+        const barW = cW/bins;
+
+        hist.forEach((h,i)=>{
+            ctx.fillStyle = color;
+            ctx.fillRect(pad.l+i*barW, pad.t+cH-h/maxH*cH, barW-1, h/maxH*cH);
+        });
+
+        if(zeroLine && mn<0 && mx>0) {
+            const zX = pad.l+(-mn/range)*cW;
+            ctx.beginPath(); ctx.moveTo(zX,pad.t); ctx.lineTo(zX,pad.t+cH);
+            ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='10px Outfit'; ctx.textAlign='center';
+            ctx.fillText('0', zX, pad.t+cH+16);
+        }
+        const mean = samples.reduce((a,b)=>a+b,0)/samples.length;
+        const mX = pad.l+((mean-mn)/range)*cW;
+        ctx.beginPath(); ctx.moveTo(mX,pad.t); ctx.lineTo(mX,pad.t+cH);
+        ctx.strokeStyle='#fbbf24'; ctx.lineWidth=2; ctx.setLineDash([6,3]); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='#fbbf24'; ctx.font='10px Outfit'; ctx.textAlign='center';
+        ctx.fillText(`μ=${mean.toFixed(2)}`, mX, pad.t+12);
+        ctx.fillStyle='rgba(255,255,255,0.25)'; ctx.font='10px Outfit';
+        ctx.textAlign='left'; ctx.fillText(mn.toFixed(2),pad.l,pad.t+cH+16);
+        ctx.textAlign='right'; ctx.fillText(mx.toFixed(2),pad.l+cW,pad.t+cH+16);
+    }
+
+    function drawEdgeEffect(p) {
+        const canvas = document.getElementById('rightCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='rgba(15,23,42,0.95)'; ctx.fillRect(0,0,W,H);
+
+        const N = 300;
+        const pValues = [p, Math.floor(p*0.6), Math.floor(p*0.3)];
+        const colors = ['rgba(52,211,153,0.6)','rgba(251,191,36,0.6)','rgba(248,113,113,0.6)'];
+        const labels = [`Full sphere (p=${pValues[0]})`, `Edge sphere (p=${pValues[1]})`, `Corner sphere (p=${pValues[2]})`];
+
+        const allSamples = pValues.map(pv => {
+            const s = [];
+            for(let i=0; i<N; i++) {
+                const raw = randn() * Math.sqrt(2*pv);
+                s.push(currentView === 'std' ? raw/Math.sqrt(pv) : raw);
+            }
+            return s;
+        });
+
+        let globalMin = Infinity, globalMax = -Infinity;
+        allSamples.forEach(s => { globalMin=Math.min(globalMin,...s); globalMax=Math.max(globalMax,...s); });
+        const range = globalMax - globalMin || 1;
+        const bins = 25;
+        const pad = {l:35,r:15,t:20,b:35};
+        const cW = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+
+        allSamples.forEach((samples, si) => {
+            const hist = new Array(bins).fill(0);
+            samples.forEach(v => { const b = Math.min(bins-1,Math.floor((v-globalMin)/range*bins)); hist[b]++; });
+            const maxH = Math.max(...hist);
+            const barW = cW/bins;
+            hist.forEach((h,i) => {
+                ctx.fillStyle = colors[si];
+                ctx.fillRect(pad.l+i*barW, pad.t+cH-h/maxH*(cH/3)*(3-si) , barW-1, h/maxH*(cH/3));
+            });
+        });
+
+        if(globalMin<0 && globalMax>0) {
+            const zX = pad.l+(-globalMin/range)*cW;
+            ctx.beginPath(); ctx.moveTo(zX,pad.t); ctx.lineTo(zX,pad.t+cH);
+            ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='9px Outfit'; ctx.textAlign='center';
+            ctx.fillText('0', zX, pad.t+cH+14);
+        }
+
+        // Legend
+        labels.forEach((lbl,i) => {
+            ctx.fillStyle = colors[i]; ctx.fillRect(pad.l, 5+i*14, 10, 8);
+            ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.font='9px Outfit'; ctx.textAlign='left';
+            ctx.fillText(lbl, pad.l+14, 12+i*14);
+        });
+
+        const note = currentView==='std' ? '✓ Standardized: all distributions overlap' : '✗ Raw: different spread → bad threshold';
+        ctx.fillStyle = currentView==='std' ? '#34d399' : '#f87171';
+        ctx.font='bold 11px Outfit'; ctx.textAlign='center';
+        ctx.fillText(note, W/2, H-6);
+    }
+
+    function redraw() {
+        const eff = parseFloat(document.getElementById('effSlider').value);
+        const p = parseInt(document.getElementById('pSlider').value);
+        const noise = parseFloat(document.getElementById('noiseSlider').value);
+        const N = 400;
+
+        const rawSamples = [], stdSamples = [];
+        for(let i=0; i<N; i++) {
+            const raw = eff + randn()*Math.sqrt(2*noise*p);
+            rawSamples.push(raw);
+            stdSamples.push(raw/Math.sqrt(p));
+        }
+
+        const rawNull = [], stdNull = [];
+        for(let i=0; i<N; i++) {
+            const r = randn()*Math.sqrt(2*noise*p);
+            rawNull.push(r);
+            stdNull.push(r/Math.sqrt(p));
+        }
+
+        if(currentView === 'raw') {
+            drawDist('leftCanvas', [...rawNull,...rawSamples.slice(0,50)], 'rgba(251,191,36,0.55)');
+            document.getElementById('leftTitle').textContent = `Null Distribution: Raw D̂ (p=${p})`;
+            document.getElementById('leftSub').textContent = 'Null variance grows with p — thresholding is not valid across the whole brain.';
+        } else {
+            drawDist('leftCanvas', [...stdNull,...stdSamples.slice(0,50)], 'rgba(165,180,252,0.55)');
+            document.getElementById('leftTitle').textContent = `Standardized D̂ₛ — Null Variance Uniform`;
+            document.getElementById('leftSub').textContent = 'Dividing by √p normalizes variance. The null distribution is identical regardless of sphere size.';
+        }
+
+        drawEdgeEffect(p);
+
+        const rawD = eff;
+        const stdD = eff / Math.sqrt(p);
+        const nullV = noise * p;
+        document.getElementById('rawKpi').textContent = rawD.toFixed(2);
+        document.getElementById('stdKpi').textContent = stdD.toFixed(3);
+        document.getElementById('nullVarKpi').textContent = nullV.toFixed(1);
+    }
+
+    redraw();
+    </script>
 </body>
 </html>
