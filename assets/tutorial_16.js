@@ -179,8 +179,16 @@ document.addEventListener('DOMContentLoaded', () => {
         explanationArea.innerHTML = content;
         
         // Re-render math if any
-        if (window.MathJax) {
-            window.MathJax.typesetPromise([explanationArea]);
+        if (window.renderMathInElement) {
+            window.renderMathInElement(explanationArea, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError : false
+            });
         }
     }
 
