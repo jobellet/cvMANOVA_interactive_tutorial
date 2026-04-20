@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Temporal Generalization | cvMANOVA Tutorial</title>
+    <meta name="description" content="Investigate neural code stability using Cross-Temporal Decoding Matrices and expected cross-time information theory.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../assets/style.css">
+    
+    <!-- MathJax for nice formulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --heatmap-low: #0f172a;
+            --heatmap-mid: #3b82f6;
+            --heatmap-high: #f43f5e;
+            --overlay-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .tutorial-content {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .simulation-container {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2.5rem;
+            margin: 2rem 0;
+        }
+
+        .viz-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: var(--glass-blur);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            min-height: 650px;
+        }
+
+        .heatmap-wrapper {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: crosshair;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+        }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .control-panel h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.25rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-switch {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider-switch:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-switch {
+            background-color: var(--accent-primary);
+        }
+
+        input:checked + .slider-switch:before {
+            transform: translateX(24px);
+        }
+
+        .tooltip-area {
+            background: rgba(15, 23, 42, 0.8);
+            border-left: 4px solid var(--accent-primary);
+            padding: 1.25rem;
+            border-radius: 0 12px 12px 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-top: 1rem;
+            min-height: 180px;
+        }
+
+        .math-display {
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            overflow-x: auto;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-bar {
+            height: 8px;
+            width: 100%;
+            background: linear-gradient(to right, var(--heatmap-low), var(--heatmap-mid), var(--heatmap-high));
+            border-radius: 4px;
+            margin-bottom: 5px;
+        }
+
+        .axis-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .axis-time {
+            position: absolute;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        #y-axis-label {
+            transform: rotate(-90deg);
+            position: absolute;
+            left: -35px;
+            top: 50%;
+        }
+
+        #x-axis-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .hotspot-info {
+            font-weight: 700;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-high, #f43f5e);
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <nav class="navbar">
+        <a href="../index.html" class="back-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tutorials
+        </a>
+        <div class="tutorial-id">Tutorial 16</div>
+    </nav>
+
+    <main class="tutorial-content">
+        <header>
+            <h1 class="glow-title">Temporal Generalization</h1>
+            <p class="subtitle">Decoding Neural Stability across Time (Voigtlaender et al., 2023)</p>
+        </header>
+
+        <div class="simulation-container">
+            <!-- Left: Heatmap -->
+            <div class="viz-card">
+                <div class="heatmap-wrapper" id="heatmapContainer">
+                    <span id="y-axis-label" class="axis-label">Test Time ($t_2$)</span>
+                    <canvas id="heatmapCanvas"></canvas>
+                    <span id="x-axis-label" class="axis-label">Train Time ($t_1$)</span>
+                </div>
+                
+                <div class="legend-container">
+                    <div class="legend-bar"></div>
+                    <div class="legend">
+                        <span>Null / Low (D ≈ 0)</span>
+                        <span>High Distinctness (D > 0)</span>
+                    </div>
+                </div>
+
+                <div class="math-display">
+                    <strong>Theoretical Framework:</strong> To test if a representation is truly stable or transforming, we compute the <em>Expected Cross-time Information</em>:
+                    <div style="text-align: center; padding: 1rem 0;">
+                        \[E_{12} = \sqrt{|D_1 D_2|} \cdot \text{sign}(D_1) \cdot \text{sign}(D_2)\]
+                    </div>
+                    Where $D_1, D_2$ are pattern distinctness at $t_1, t_2$ on the diagonal.
+                </div>
+            </div>
+
+            <!-- Right: Controls & Context -->
+            <div class="controls-sidebar">
+                <div class="control-panel">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        Inference Mode
+                    </h3>
+                    
+                    <div class="toggle-section">
+                        <div class="switch-container">
+                            <span style="font-size: 0.95rem; font-weight: 600;">Show Theoretical Null ($E_{12}$)</span>
+                            <label class="switch">
+                                <input type="checkbox" id="expectedToggle">
+                                <span class="slider-switch"></span>
+                            </label>
+                        </div>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                            Overlay the hypothesis of perfect stability. Regions where empirical info < $E_{12}$ suggest dynamic transformation.
+                        </p>
+                    </div>
+
+                    <div class="tooltip-area" id="explanationArea">
+                        <span class="hotspot-info">Hover over the matrix...</span>
+                        <p>Hover over any point in the Time x Time matrix to see how the multivariate representation generalizes across time delays.</p>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        Key Definitions
+                    </h3>
+                    <ul style="font-size: 0.85rem; color: var(--text-secondary); padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                        <li><strong>Main Diagonal ($t_1 = t_2$):</strong> Measures the instantaneous strength of the representation.</li>
+                        <li><strong>Off-Diagonal ($t_1 \neq t_2$):</strong> Measures pattern generalization. How much information remains in the same "code"?</li>
+                        <li><strong>Dynamic Representation:</strong> When off-diagonal info is significantly lower than predicted by the diagonal strength.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/tutorial_16.js"></script>
+</body>
+</html>

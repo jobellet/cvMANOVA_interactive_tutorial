@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cvMANOVA vs SVM Accuracy | Interactive Tutorial</title>
+    <meta name="description" content="An interactive comparison between SVM classification accuracy and cvMANOVA pattern distinctness (D).">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        /* Specific styles for this tutorial */
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        
+        .simulation-box {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            appearance: none;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: cursor;
+            transition: var(--transition);
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
+        }
+        
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+        
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid var(--accent-primary);
+            padding: 1.5rem;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 2rem;
+        }
+        
+        .info-box h3 {
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .info-box p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+        
+        .metric-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+        }
+        
+        .svm-metric { color: #f87171; }
+        .cvmanova-metric { color: #60a5fa; }
+
+        @media (max-width: 900px) {
+            .comparison-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <nav class="navbar">
+        <a href="../index.html" class="back-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tutorials
+        </a>
+        <div class="tutorial-id">Tutorial 09</div>
+    </nav>
+
+    <main class="tutorial-content">
+        <header>
+            <h1 class="glow-title">cvMANOVA vs. SVM</h1>
+            <p class="subtitle">Why classification accuracy is often the wrong metric for inference.</p>
+        </header>
+
+        <section class="intro-section">
+            <div class="info-box">
+                <h3>The "Accuracy" Ceiling</h3>
+                <p>Standard multivariate pattern analysis (MVPA) often uses classification accuracy (e.g., SVM). However, accuracy is non-linear—it saturates at 100%. Once at the ceiling, accuracy cannot distinguish between a strong representation and an even stronger one.</p>
+            </div>
+            
+            <div class="info-box" style="border-color: var(--accent-secondary); background: rgba(139, 92, 246, 0.1);">
+                <h3 style="color: var(--accent-secondary);">The cvMANOVA Solution</h3>
+                <p>Pattern distinctness ($\hat{D}$) is a continuous, variance-based measure. It provides an unbiased estimate of the true population effect size that does not saturate and remains invariant to the amount of training data.</p>
+            </div>
+        </section>
+
+        <section class="simulation-section">
+            <div class="controls simulation-box">
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>True Distance (Effect Size)</span>
+                        <span id="distanceVal">1.5</span>
+                    </div>
+                    <input type="range" id="distanceSlider" min="0" max="4" step="0.1" value="1.5">
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Noise Variance ($\sigma^2$)</span>
+                        <span id="noiseVal">1.0</span>
+                    </div>
+                    <input type="range" id="noiseSlider" min="0.1" max="3" step="0.1" value="1.0">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Number of Training Trials (N)</span>
+                        <span id="trialsVal">20</span>
+                    </div>
+                    <input type="range" id="trialsSlider" min="5" max="200" step="5" value="20">
+                </div>
+            </div>
+
+            <div class="comparison-container">
+                <!-- 2D Scatter Plot -->
+                <div class="simulation-box">
+                    <h3>2D Voxel Patterns</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Simulated voxel activations for two classes.</p>
+                    <div class="chart-wrapper">
+                        <canvas id="scatterChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Metrics Comparison -->
+                <div class="simulation-box">
+                    <h3>Performance Comparison</h3>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">Metric response to data volume.</p>
+                    <div class="chart-wrapper">
+                        <canvas id="metricsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comparison-container" style="margin-top: 2rem;">
+                <div class="metric-card">
+                    <div class="metric-value svm-metric" id="svmAccLabel">75%</div>
+                    <div class="metric-label">SVM Accuracy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value cvmanova-metric" id="dMetricLabel">0.85</div>
+                    <div class="metric-label">cvMANOVA Distinctness ($D$)</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="educational-text" style="margin-top: 4rem;">
+            <h2>Key Observations</h2>
+            <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <div class="simulation-box">
+                    <h3 class="svm-metric">SVM Limitations</h3>
+                    <p>As you increase the Number of Trials, notice how SVM mapping accuracy quickly hits **100%**. At this point, even if you increase the 'True Distance', the accuracy cannot move further. This makes it impossible to compare effect sizes between different brain regions or sessions once data is sufficient.</p>
+                </div>
+                <div class="simulation-box">
+                    <h3 class="cvmanova-metric">cvMANOVA Advantage</h3>
+                    <p>The cvMANOVA statistic **$\hat{D}$** remains stable as you increase Trials. Because it is an unbiased estimator of the population variance, it is **invariant to the amount of data**. It scales linearly with the signal-to-noise ratio, providing a true measure of representation strength.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../assets/tutorial_9.js"></script>
+</body>
+</html>

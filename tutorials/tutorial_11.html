@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MATLAB vs. Python Implementation | cvMANOVA Tutorial</title>
+    <meta name="description" content="Compare cvMANOVA implementations in MATLAB (SPM) and Python (nilearn).">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- PrismJS for Code Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <link rel="stylesheet" href="../assets/style.css">
+    <link rel="stylesheet" href="../assets/tutorial_layout.css">
+    
+    <style>
+        .split-pane {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .code-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .card-header {
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lang-badge {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            letter-spacing: 0.05em;
+        }
+
+        .matlab-badge { background: #e16b10; color: white; }
+        .python-badge { background: #3776ab; color: white; }
+
+        pre {
+            margin: 0 !important;
+            padding: 1.5rem !important;
+            font-family: 'Fira Code', monospace !important;
+            font-size: 0.9rem !important;
+            flex-grow: 1;
+            overflow: auto;
+        }
+
+        .simulation-output {
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            min-height: 150px;
+        }
+
+        .run-btn {
+            background: var(--accent-primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .run-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .output-line {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+            color: #10b981;
+        }
+
+        .comment {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        @media (max-width: 900px) {
+            .split-pane { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <nav class="navbar">
+        <a href="../index.html" class="back-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tutorials
+        </a>
+        <div class="tutorial-id">Tutorial 11</div>
+    </nav>
+
+    <main class="tutorial-content">
+        <header>
+            <h1 class="glow-title">Bridge: MATLAB & Python</h1>
+            <p class="subtitle">Implementation patterns across the cvMANOVA ecosystem.</p>
+        </header>
+
+        <section class="info-box">
+            <h3>Technical Requirement</h3>
+            <p>Whether using MATLAB or Python, the underlying first-level GLM must model <strong>temporal autocorrelations</strong> (typically using AR(1) or FAST models) to ensure valid pattern distinctness estimates.</p>
+        </section>
+
+        <div class="split-pane">
+            <!-- MATLAB Side -->
+            <div class="code-card">
+                <div class="card-header">
+                    <span class="lang-badge matlab-badge">MATLAB (SPM)</span>
+                    <button class="run-btn" onclick="runMatlab()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Run Simulation
+                    </button>
+                </div>
+                <pre><code class="language-matlab">% Load SPM model (Ensure AR(1)/FAST is used!)
+load('SPM.mat');
+
+% Define Searchlight Parameters
+dirName  = './results_cvmanova';
+slRadius = 3; % ~123 voxels
+permute  = 0;
+
+% Define Contrast Matrices
+C1 = [1 -1 0 0]; 
+Cs = {C1};
+
+% Execute Searchlight
+stats = cvManovaSearchlight(dirName, slRadius, Cs, permute);
+
+% Results generated: cms_Ds_c1p1.nii
+% Standardized Pattern Distinctness Map</code></pre>
+                <div class="simulation-output" id="matlab-output">
+                    <div style="color: var(--text-secondary); font-style: italic;">Hit 'Run' to simulate MATLAB output...</div>
+                </div>
+            </div>
+
+            <!-- Python Side -->
+            <div class="code-card">
+                <div class="card-header">
+                    <span class="lang-badge python-badge">Python (Nilearn)</span>
+                    <button class="run-btn" onclick="runPython()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Run Simulation
+                    </button>
+                </div>
+                <pre><code class="language-python">from cvmanova import SearchlightCvManova, SPMLoader
+from cvmanova.contrasts import ContrastSpec
+
+# Load from SPM directory
+loader = SPMLoader('./first_level_results')
+X, Y, mask = loader.load()
+
+# Define Contrast
+c_spec = ContrastSpec(conditions=['A', 'B'])
+contrast = c_spec.difference('A', 'B')
+
+# Run Searchlight
+sl = SearchlightCvManova(radius=3.0)
+sl.fit(X, Y, mask=mask, contrast=contrast)
+
+# Export Results
+sl.to_nifti('searchlight_D.nii')
+sl.plot_glass_brain()</code></pre>
+                <div class="simulation-output" id="python-output">
+                    <div style="color: var(--text-secondary); font-style: italic;">Hit 'Run' to simulate Python output...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-matlab.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="../assets/tutorial_11.js"></script>
+</body>
+</html>

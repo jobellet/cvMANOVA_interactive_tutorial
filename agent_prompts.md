@@ -243,3 +243,4 @@ Build an interactive walkthrough of the foundational *Allefeld & Haynes (2014)* 
 *   **The Math (Standardization):** It is critical that the agent implements the standardization equation: $\hat{D}_s = \frac{\hat{D}}{\sqrt{p}}$. 
 *   **Visual/Interactive:** Show a 3D brain boundary. Let the user drag a searchlight sphere to the edge of the brain mask. Explain that at the borders of the brain, the sphere contains fewer valid voxels ($p$). Because the sampling variance of $\hat{D}$ scales with $p$, dividing by $\sqrt{p}$ standardizes the map so that $D$-values can be safely compared and thresholded across the entire brain for group-level inference. Ensure the visual map dynamically updates its color scaling when the standardization formula is applied.
 ```
+### 

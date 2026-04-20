@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standardization & Inference | cvMANOVA Tutorial</title>
+    <meta name="description" content="Learn how cvMANOVA standardizes pattern distinctness to enable robust group-level inference, especially at brain boundaries.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="../assets/style.css">
+    <link rel="stylesheet" href="../assets/tutorial_12.css">
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <nav class="navbar">
+        <a href="../index.html" class="back-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tutorials
+        </a>
+        <div class="tutorial-id">Tutorial 12</div>
+    </nav>
+
+    <main class="tutorial-content">
+        <header>
+            <h1 class="glow-title">Standardization & Inference</h1>
+            <p class="subtitle">Turning Raw Cross-Validated Distances into Robust Statistical Z-Maps.</p>
+        </header>
+
+        <section class="intro-text">
+            <p>
+                While cross-validated distances (like Mahalanobis) are <strong>strictly unbiased</strong> (centered at zero under the null), 
+                their variance is not constant. In fMRI searchlight mapping, spheres near the brain edges contain fewer voxels 
+                (<span class="math-highlight">\(p\)</span>), causing the null variance to fluctuate across the brain.
+            </p>
+            <p style="margin-top: 1rem;">
+                cvMANOVA solves this by generalizing the distance to a <strong>standardized pattern distinctness</strong> framework, 
+                producing estimates that behave like Z-scores for easy group-level analysis.
+            </p>
+        </section>
+
+        <div class="comparison-container">
+            <!-- Left: Controls -->
+            <div class="control-panel">
+                <h3>Estimator Toggle</h3>
+                <div class="toggle-group">
+                    <button id="rawBtn" class="toggle-btn">Raw Distance</button>
+                    <button id="cvmanovaBtn" class="toggle-btn active">cvMANOVA (Standardized)</button>
+                </div>
+
+                <div class="equation-box" id="equationDisplay">
+                    <!-- KaTeX formula injected here -->
+                    \[ \hat{D}_s = \frac{1}{\sqrt{p}} \hat{D} \]
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-header">
+                        <label>Voxel Count (p)</label>
+                        <span id="voxelVal">27</span>
+                    </div>
+                    <input type="range" id="voxelSlider" min="5" max="100" value="27">
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                        Searchlights at the boundary have fewer voxels than those in the center.
+                    </p>
+                </div>
+
+                <div class="voxel-preview-wrapper">
+                    <label style="font-size: 0.9rem; color: var(--text-secondary);">Searchlight Density Preview</label>
+                    <div id="voxelGrid" class="voxel-grid-preview"></div>
+                </div>
+            </div>
+
+            <!-- Right: Visualization -->
+            <div class="viz-panel">
+                <h3>Null Distribution (<span class="math-highlight">\(H_0\)</span>)</h3>
+                <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Watch how the variance changes as you adjust the number of voxels.
+                </p>
+                <div class="chart-container">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+                
+                <div class="info-card">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+                        </svg>
+                        Why divide by \(\sqrt{p}\)?
+                    </h3>
+                    <p style="font-size: 0.9rem; line-height: 1.6;">
+                        In the raw framework, a region with 100 voxels will have a wider null distribution than a region with 10 voxels. 
+                        This <strong>inhomogeneity</strong> makes group-level T-tests invalid. By standardizing by \(\sqrt{p}\), 
+                        cvMANOVA ensures the null variance is approximately 1.0 everywhere.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <section class="footer-note" style="margin-top: 4rem; text-align: center; opacity: 0.7;">
+            <p><strong>Note:</strong> Both estimators are centered at zero. This ensures that even if you have negative values 
+            in your map, they represent valid null fluctuations rather than systematic bias.</p>
+        </section>
+    </main>
+
+    <script src="../assets/tutorial_12.js"></script>
+</body>
+</html>

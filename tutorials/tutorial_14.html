@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Study: Erhart et al. (2021) | cvMANOVA Tutorial</title>
+    <meta name="description" content="Explore how cvMANOVA decodes auditory working memory representations that are invisible to univariate methods.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../assets/style.css">
+    <link rel="stylesheet" href="../assets/tutorial_layout.css">
+    
+    <style>
+        :root {
+            --spatial-color: #3b82f6;
+            --pitch-color: #f43f5e;
+            --voxel-size: 40px;
+        }
+
+        .case-study-container {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .visualization-area {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            position: relative;
+            min-height: 500px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem;
+            border-radius: 100px;
+            gap: 0.5rem;
+            align-self: center;
+        }
+
+        .toggle-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 100px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .toggle-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .timeline-container {
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .timeline-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            outline: none;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+        }
+
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+        }
+
+        .timeline-step {
+            flex: 1;
+            text-align: center;
+            opacity: 0.4;
+            transition: var(--transition);
+        }
+
+        .timeline-step.active {
+            opacity: 1;
+            color: var(--accent-primary);
+        }
+
+        .voxel-grid-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .voxel-grid {
+            display: grid;
+            grid-template-columns: repeat(6, var(--voxel-size));
+            grid-template-rows: repeat(6, var(--voxel-size));
+            gap: 4px;
+            transform: rotateX(20deg) rotateZ(10deg);
+        }
+
+        .voxel {
+            width: var(--voxel-size);
+            height: var(--voxel-size);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .condition-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .badge-spatial { background: rgba(59, 130, 246, 0.2); color: var(--spatial-color); border: 1px solid var(--spatial-color); }
+        .badge-pitch { background: rgba(244, 63, 94, 0.2); color: var(--pitch-color); border: 1px solid var(--pitch-color); }
+
+        .signal-meter {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .signal-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-primary);
+            transition: width 0.3s ease;
+        }
+
+        .hotspot {
+            background: var(--accent-primary);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 0 15px var(--accent-primary);
+            animation: pulse 2s infinite;
+            position: absolute;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .explanation-bubble {
+            background: var(--card-bg);
+            border: 1px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 1.25rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 100;
+            max-width: 280px;
+        }
+
+        .univariate-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .active-univariate .univariate-overlay { opacity: 1; }
+
+        @media (max-width: 1000px) {
+            .case-study-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <nav class="navbar">
+        <a href="../index.html" class="back-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tutorials
+        </a>
+        <div class="tutorial-id">Tutorial 14</div>
+    </nav>
+
+    <main class="tutorial-content">
+        <header>
+            <h1 class="glow-title">Decoding the "Invisible"</h1>
+            <p class="subtitle">Case Study: Spatial vs. Non-Spatial Auditory Working Memory (Erhart et al., 2021)</p>
+        </header>
+
+        <div class="case-study-container">
+            <!-- Left: Visualization -->
+            <div class="visualization-area" id="vizArea">
+                <div class="view-toggle">
+                    <button class="toggle-btn active" id="univariateBtn">Univariate GLM</button>
+                    <button class="toggle-btn" id="multivariateBtn">Multivariate cvMANOVA</button>
+                </div>
+
+                <div class="timeline-container">
+                    <input type="range" class="timeline-slider" id="timelineSlider" min="0" max="3" value="0">
+                    <div class="timeline-labels">
+                        <div class="timeline-step active" id="step0">Rest</div>
+                        <div class="timeline-step" id="step1">Stimulus</div>
+                        <div class="timeline-step" id="step2">Maintenance</div>
+                        <div class="timeline-step" id="step3">Response</div>
+                    </div>
+                </div>
+
+                <div class="voxel-grid-wrapper">
+                    <div class="voxel-grid" id="voxelGrid">
+                        <!-- 36 voxels generated by JS -->
+                    </div>
+                    
+                    <div class="univariate-overlay" id="univariateOverlay">
+                        <div class="stability-value" style="font-size: 2rem; margin: 0;">Δ Signal ≈ 0.00</div>
+                        <p style="font-size: 0.8rem; color: var(--text-secondary);">Magnitude averaging cancels information</p>
+                    </div>
+
+                    <!-- Hotspots -->
+                    <div class="hotspot" id="hotspot1" style="top: 20%; left: 15%; display: none;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                    </div>
+                    <div class="explanation-bubble" id="bubble1" style="top: 25%; left: 15%;">
+                        Because MVPA evaluates the covariance structure across multiple measurements, it extracts information encoded in the pattern geometry—revealing hidden representations that univariate magnitude averaging destroys.
+                    </div>
+                </div>
+
+                <div id="univariateLegend" style="text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+                    <p>Both tasks use the exact same sounds. Univariate GLM sees no difference in metabolic demand.</p>
+                </div>
+            </div>
+
+            <!-- Right: Details -->
+            <div class="info-sidebar">
+                <div class="task-card">
+                    <h3>Experimental Paradox</h3>
+                    <p>Participants listen to identical sounds but perform two different tasks:</p>
+                    
+                    <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                        <div id="spatialTask">
+                            <span class="condition-badge badge-spatial">Spatial Maintenance</span>
+                            <p style="font-size: 0.85rem; opacity: 0.8;">Maintain the physical <strong>location</strong> of the sound (ITD cue).</p>
+                        </div>
+                        <div id="pitchTask">
+                            <span class="condition-badge badge-pitch">Non-Spatial Maintenance</span>
+                            <p style="font-size: 0.85rem; opacity: 0.8;">Maintain the <strong>pitch</strong> of the sound.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="task-card" style="border-left: 4px solid var(--accent-primary);">
+                    <h3>Decoding Sensitivity</h3>
+                    <p style="font-size: 0.9rem;">While univariate methods failed to find contiguous activation blobs, cvMANOVA revealed a distributed, fine-grained pattern across <strong>18 cortical regions</strong>.</p>
+                    
+                    <div class="signal-meter">
+                        <div class="signal-fill" id="decodingBar"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800; text-transform: uppercase;">
+                        <span>Univariate Blob</span>
+                        <span>Pattern Distinctness (D)</span>
+                    </div>
+                </div>
+
+                <div class="info-card" id="taskTooltip" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 1rem; border-radius: 12px; font-size: 0.85rem; display: none;">
+                    <strong>Why near zero?</strong> Overall metabolic demand is identical because the physical sounds presented are exactly the same. Maintenance-related activations are distributed, preventing univariate methods from detecting contiguous blobs.
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/tutorial_14.js"></script>
+</body>
+</html>

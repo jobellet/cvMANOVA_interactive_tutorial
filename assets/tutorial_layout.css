@@ -1,0 +1,134 @@
+/**
+ * Shared Tutorial Page Layout
+ */
+.tutorial-content {
+    max-width: 1200px !important;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.glow-title {
+    font-size: 3.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.intro-section {
+    margin-bottom: 3rem;
+}
+
+.simulation-section {
+    position: relative;
+    z-index: 5;
+}
+
+.tutorial-id {
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    letter-spacing: 0.05em;
+}
+
+.educational-text {
+    margin-top: 4rem;
+    padding-top: 4rem;
+    border-top: 1px solid var(--card-border);
+}
+
+.educational-text h2 {
+    font-size: 2.2rem;
+    margin-bottom: 1.5rem;
+    font-weight: 800;
+}
+
+.educational-text p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+}
+
+.info-box {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 4px solid var(--accent-primary);
+    padding: 1.5rem;
+    border-radius: 0 12px 12px 0;
+    margin-bottom: 2rem;
+}
+
+.info-box h3 {
+    color: var(--accent-primary);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.info-box p {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+}
+
+.simulation-box {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 2rem;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.control-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    appearance: none;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.2);
+}
+
+.chart-wrapper {
+    height: 300px;
+    position: relative;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .tutorial-content {
+        padding: 1rem;
+    }
+}

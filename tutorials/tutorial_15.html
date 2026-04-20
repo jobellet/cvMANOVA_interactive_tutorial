@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Case Study: Santangelo et al. (2020) | cvMANOVA Tutorial</title>
+    <meta name="description" content="Explore how cvMANOVA's pattern distinctness (D) scales with memory remoteness in the vmPFC.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="../assets/style.css">
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --hsam-color: #8b5cf6;
+            --control-color: #3b82f6;
+            --regression-line: rgba(255, 255, 255, 0.4);
+        }
+
+        .tutorial-content {
+            padding: 4rem 2rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .simulation-container {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2.5rem;
+            margin: 2rem 0;
+        }
+
+        .viz-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            backdrop-filter: var(--glass-blur);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            height: 600px;
+        }
+
+        .controls-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            backdrop-filter: var(--glass-blur);
+        }
+
+        .control-panel h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .group-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.4rem;
+            border-radius: 100px;
+            gap: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 0.75rem 0;
+            border-radius: 100px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.85rem;
+        }
+
+        .toggle-btn.active.controls {
+            background: var(--control-color);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .toggle-btn.active.hsam {
+            background: var(--hsam-color);
+            color: white;
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }
+
+        .slider-wrapper {
+            margin: 2rem 0;
+        }
+
+        .styled-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            outline: none;
+            margin: 1.5rem 0;
+        }
+
+        .styled-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+            border: 2px solid white;
+        }
+
+        .stat-badge {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label { color: var(--text-secondary); }
+        .stat-value { font-weight: 700; font-family: monospace; }
+
+        .context-box {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--card-border);
+            padding-top: 1.5rem;
+            margin-top: auto;
+        }
+
+        .context-box strong {
+            color: var(--text-primary);
+        }
+
+        .chart-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        @media (max-width: 1000px) {
+            .simulation-container { grid-template-columns: 1fr; }
+            .viz-card { height: 500px; }
+        }
+        
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <nav class="navbar">
+        <a href="../index.html" class="back-button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Tutorials
+        </a>
+        <div class="tutorial-id">Tutorial 15</div>
+    </nav>
+
+    <main class="tutorial-content">
+        <header>
+            <h1 class="glow-title">Neural Scaling of Memory</h1>
+            <p class="subtitle">Case Study: vmPFC Patterns and Temporal Distance (Santangelo et al., 2020)</p>
+        </header>
+
+        <div class="simulation-container">
+            <!-- Left: Visualization -->
+            <div class="viz-card">
+                <div class="chart-container">
+                    <canvas id="regressionChart"></canvas>
+                </div>
+                
+                <div class="context-box">
+                    <p><strong>Methodological Insight:</strong> cvMANOVA's $D$ metric is not a binary 'detectable/not detectable' classification threshold. Instead, it is a continuous measure of effect size that allows researchers to prove that the vmPFC's neural specialization scales continuously with the remoteness of the memory.</p>
+                </div>
+            </div>
+
+            <!-- Right: Controls -->
+            <div class="controls-sidebar">
+                <div class="control-panel">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Select Group
+                    </h3>
+                    <div class="group-toggle" id="groupToggle">
+                        <button class="toggle-btn active controls" data-group="controls">Controls</button>
+                        <button class="toggle-btn hsam" data-group="hsam">HSAM</button>
+                    </div>
+                    
+                    <div id="statsPanel">
+                        <div class="stat-badge">
+                            <span class="stat-label">Pearson r</span>
+                            <span class="stat-value" id="rVal">0.354</span>
+                        </div>
+                        <div class="stat-badge">
+                            <span class="stat-label">p-value</span>
+                            <span class="stat-value" id="pVal">0.058</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Memory Age Gap
+                    </h3>
+                    <div class="slider-wrapper">
+                        <div class="label-row">
+                            <span>Recent (1 mo)</span>
+                            <span>Remote (120 mo)</span>
+                        </div>
+                        <input type="range" class="styled-slider" id="ageSlider" min="1" max="120" value="60">
+                        <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+                        Current Focus: <strong id="ageLabel" style="color: var(--text-primary);">60 Months</strong>
+                        </p>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); opacity: 0.8;">
+                        Drag the slider to observe how pattern distinctness (D) in the left vmPFC evolves as memories become more remote.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/tutorial_15.js"></script>
+</body>
+</html>

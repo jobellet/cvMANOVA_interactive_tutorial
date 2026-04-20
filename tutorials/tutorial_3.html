@@ -3,44 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cvMANOVA vs Standard MVPA</title>
+    <title>The Importance of Noise Covariance | Interactive Tutorial</title>
+    <meta name="description" content="Understand the importance of noise covariance and spatial prewhitening in fMRI data analysis.">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        .tutorial-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2.5rem;
+            margin-top: 3rem;
+        }
+
+        .simulation-box {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            backdrop-filter: var(--glass-blur);
+            position: relative;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .viz-area {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            aspect-ratio: 16/10;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            border: 1px solid var(--card-border);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        #scatterPlot {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .control-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .control-value {
+            color: var(--accent-primary);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .metrics-overlay {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric-card {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1.25rem;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid var(--card-border);
+            transition: var(--transition);
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .euclidean-val { color: var(--text-primary); }
+        .mahalanobis-val { color: var(--accent-primary); text-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+
+        .formula-container {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .interpretation-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(59, 130, 246, 0.08);
+            border-left: 4px solid var(--accent-primary);
+            border-radius: 0 16px 16px 0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            justify-content: center;
+            color: var(--text-secondary);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 1000px) {
+            .tutorial-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="background-mesh"></div>
     
     <nav class="navbar">
         <a href="../index.html" class="back-button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
-            Back to Home
+            Back to Tutorials
         </a>
+        <div class="tutorial-id">Tutorial 03</div>
     </nav>
 
     <main class="tutorial-content">
-        <h1 class="glow-title" style="font-size: 3rem;">cvMANOVA vs Standard MVPA</h1>
-        <p class="subtitle" style="margin-bottom: 2rem;">Visualize how cross-validation handles noise covariance and noise correlation compared to a standard classifier.</p>
+        <header>
+            <h1 class="glow-title">The Geometry of Noise</h1>
+            <p class="subtitle">Understand why fMRI noise is structured, and how spatial prewhitening reveals the hidden signal.</p>
+        </header>
 
-        <div class="simulation-placeholder">
-            [ Interactive Simulation Widget Goes Here ]
+        <div class="tutorial-container">
+            <!-- Left Panel: Context -->
+            <div class="info-side">
+                <div class="info-card">
+                    <h2 style="margin-bottom: 1rem;">Spatial Structure of Noise</h2>
+                    <p>Noise in fMRI is rarely "white" (independent). Neighboring voxels often share noise sources like:</p>
+                    <ul style="color: var(--text-secondary); margin-left: 1.5rem; margin-bottom: 1.5rem;">
+                        <li style="margin-bottom: 0.5rem;"><strong>Vascular pulsations:</strong> Heartbeat-driven changes.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Respiratory cycles:</strong> Breathing-induced field shifts.</li>
+                        <li style="margin-bottom: 0.5rem;"><strong>Anatomy:</strong> Some voxels are inherently noisier due to tissue type.</li>
+                    </ul>
+                    <p>This creates <strong>spatial covariance</strong> (\(\Sigma\)), meaning the noise is correlated across voxels rather than being purely random.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3 style="margin-bottom: 0.5rem; color: var(--text-primary);">The Euclidean Problem</h3>
+                    <p>Euclidean distance weighs all voxels equally. When voxels are correlated, the noise "spreads out" along specific axes, burying the signal difference and causing standard distance metrics to fail.</p>
+                </div>
+
+                <div class="info-card">
+                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">The cvMANOVA Solution</h3>
+                    <p>Mahalanobis distance utilizes the inverted noise covariance matrix (\(\Sigma^{-1}\)) to perform **spatial prewhitening**. This effectively stretches or squashes the space to make noise spherical.</p>
+                    
+                    <div class="formula-container">
+                        \[D^2 = (\mu_1 - \mu_2)^T \Sigma^{-1} (\mu_1 - \mu_2)\]
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Interaction -->
+            <div class="simulation-side">
+                <div class="simulation-box">
+                    <div class="controls">
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Spatial Correlation (\(\rho\))</span>
+                                <span class="control-value" id="corr-val">0.70</span>
+                            </div>
+                            <input type="range" id="noise-corr" min="0" max="0.98" step="0.01" value="0.7">
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label">
+                                <span>Voxel 2 Variance (\(\sigma_2^2\))</span>
+                                <span class="control-value" id="var-val">2.0</span>
+                            </div>
+                            <input type="range" id="v2-var" min="1" max="5" step="0.1" value="2">
+                        </div>
+                    </div>
+
+                    <div class="viz-area">
+                        <canvas id="scatterPlot"></canvas>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item"><span class="dot" style="background: #22d3ee; box-shadow: 0 0 10px #22d3ee;"></span> Condition A</div>
+                        <div class="legend-item"><span class="dot" style="background: #fb7185; box-shadow: 0 0 10px #fb7185;"></span> Condition B</div>
+                        <div class="legend-item"><span class="dot" style="border: 2px solid #6366f1;"></span> Noise Covariance</div>
+                    </div>
+
+                    <div class="metrics-overlay">
+                        <div class="metric-card">
+                            <div class="metric-label">Euclidean</div>
+                            <div class="metric-value euclidean-val" id="dist-euclidean">1.20</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Mahalanobis</div>
+                            <div class="metric-value mahalanobis-val" id="dist-mahal">--</div>
+                        </div>
+                    </div>
+
+                    <div class="interpretation-box" id="interpretation-text">
+                        Adjust the sliders to see how noise covariance (\(\Sigma\)) distorts the separation between Condition A and B.
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <section style="margin-top: 3rem; line-height: 1.8;">
-            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Concept Overview</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Standard Machine Learning approaches like Support Vector Machines (SVMs) often ignore the specific correlation 
-                structure of the noise between different voxels. cvMANOVA explicitly incorporates this through the noise covariance matrix.
-            </p>
-            <p style="color: var(--text-secondary);">
-                In this interactive tutorial, you will be able to adjust the <strong>noise variance</strong> and <strong>spatial correlation</strong>
-                to see exactly when standard Euclidean distance breaks down and produces false positives.
-            </p>
-        </section>
     </main>
 
+    <script src="../assets/tutorial_3.js"></script>
 </body>
 </html>
