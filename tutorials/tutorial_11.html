@@ -3,81 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MATLAB vs. Python Implementation | cvMANOVA Tutorial</title>
-    <meta name="description" content="Compare cvMANOVA implementations in MATLAB (SPM) and Python (nilearn).">
-    
-    <!-- Fonts -->
+    <title>Implementation Bridge | cvMANOVA Tutorial</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    
-    <!-- PrismJS for Code Highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    
     <link rel="stylesheet" href="../assets/style.css">
-    <link rel="stylesheet" href="../assets/tutorial_layout.css">
-    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <style>
-        .split-pane {
+        .code-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 2rem;
-            margin-top: 2rem;
+            margin-top: 3rem;
         }
 
         .code-card {
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 20px;
+            border-radius: 24px;
             overflow: hidden;
+            backdrop-filter: var(--glass-blur);
             display: flex;
             flex-direction: column;
-            backdrop-filter: var(--glass-blur);
+            transition: var(--transition);
+        }
+
+        .code-card:hover {
+            border-color: var(--card-hover-border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .card-header {
-            padding: 1rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.25rem 1.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--card-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .lang-badge {
-            font-size: 0.75rem;
+        .lang-label {
             font-weight: 800;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            padding: 0.25rem 0.75rem;
-            border-radius: 100px;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .matlab-badge { background: #e16b10; color: white; }
-        .python-badge { background: #3776ab; color: white; }
-
-        pre {
-            margin: 0 !important;
-            padding: 1.5rem !important;
-            font-family: 'Fira Code', monospace !important;
-            font-size: 0.9rem !important;
-            flex-grow: 1;
-            overflow: auto;
-        }
-
-        .simulation-output {
-            padding: 1.5rem;
-            background: rgba(0, 0, 0, 0.4);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            min-height: 150px;
-        }
+        .matlab-label { color: #f59e0b; }
+        .python-label { color: #38bdf8; }
 
         .run-btn {
-            background: var(--accent-primary);
-            color: white;
-            border: none;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
             padding: 0.5rem 1rem;
-            border-radius: 8px;
+            border-radius: 100px;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
@@ -87,24 +71,106 @@
         }
 
         .run-btn:hover {
-            transform: translateY(-2px);
-            filter: brightness(1.1);
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            transform: scale(1.05);
         }
 
-        .output-line {
+        .code-content {
+            flex-grow: 1;
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        pre {
+            margin: 0 !important;
+            padding: 1.5rem !important;
+            background: transparent !important;
+            font-family: 'Fira Code', monospace !important;
+            font-size: 0.85rem !important;
+        }
+
+        .terminal-output {
+            background: #000;
+            padding: 1.5rem;
+            height: 200px;
+            border-top: 1px solid var(--card-border);
             font-family: 'Fira Code', monospace;
-            font-size: 0.85rem;
-            margin-bottom: 0.25rem;
-            color: #10b981;
-        }
-
-        .comment {
+            font-size: 0.8rem;
             color: #94a3b8;
-            font-style: italic;
+            overflow-y: auto;
+            position: relative;
         }
 
-        @media (max-width: 900px) {
-            .split-pane { grid-template-columns: 1fr; }
+        .terminal-title {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .log-line {
+            margin-bottom: 0.4rem;
+            opacity: 0;
+            transform: translateX(-10px);
+            animation: slideIn 0.3s forwards;
+        }
+
+        @keyframes slideIn {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .success { color: #10b981; }
+        .warning { color: #f59e0b; }
+
+        .visual-result {
+            grid-column: span 2;
+            margin-top: 2rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 2rem;
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .glass-brain-sim {
+            width: 100%;
+            height: 350px;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .brain-mask {
+            opacity: 0.2;
+            width: 80%;
+            height: auto;
+        }
+
+        .cluster {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(5px);
+            animation: glow 2s infinite alternate;
+        }
+
+        @keyframes glow {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.5); opacity: 0.4; }
+        }
+
+        @media (max-width: 1000px) {
+            .code-grid { grid-template-columns: 1fr; }
+            .visual-result { grid-column: span 1; }
         }
     </style>
 </head>
@@ -123,82 +189,116 @@
 
     <main class="tutorial-content">
         <header>
-            <h1 class="glow-title">Bridge: MATLAB & Python</h1>
-            <p class="subtitle">Implementation patterns across the cvMANOVA ecosystem.</p>
+            <h1 class="glow-title">The Code Bridge</h1>
+            <p class="subtitle">Interoperable cvMANOVA implementation side-by-side.</p>
         </header>
 
-        <section class="info-box">
-            <h3>Technical Requirement</h3>
-            <p>Whether using MATLAB or Python, the underlying first-level GLM must model <strong>temporal autocorrelations</strong> (typically using AR(1) or FAST models) to ensure valid pattern distinctness estimates.</p>
-        </section>
+        <div class="info-box" style="margin-bottom: 2rem;">
+            <h3>Consistency Note</h3>
+            <p>Ensure your first-level model uses <strong>AR(1)</strong> or <strong>FAST</strong> temporal autocorrelation modeling. Without this, the noise covariance estimate ($\Sigma$) will be biased, leading to inaccurate pattern distinctness ($D$) values.</p>
+        </div>
 
-        <div class="split-pane">
-            <!-- MATLAB Side -->
+        <div class="code-grid">
+            <!-- MATLAB implementation -->
             <div class="code-card">
                 <div class="card-header">
-                    <span class="lang-badge matlab-badge">MATLAB (SPM)</span>
-                    <button class="run-btn" onclick="runMatlab()">
+                    <div class="lang-label matlab-label">
+                        <span style="font-size: 1.2rem;">M</span> MATLAB (SPM)
+                    </div>
+                    <button class="run-btn" id="runMatlab">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        Run Simulation
+                        Run Script
                     </button>
                 </div>
-                <pre><code class="language-matlab">% Load SPM model (Ensure AR(1)/FAST is used!)
-load('SPM.mat');
+                <div class="code-content">
+                    <pre><code class="language-matlab">% 1. Set Path and Parameters
+resultsDir = './stats/results';
+slRadius   = 3; % Radius in voxels (~123 vox)
 
-% Define Searchlight Parameters
-dirName  = './results_cvmanova';
-slRadius = 3; % ~123 voxels
-permute  = 0;
+% 2. Specify Contrast
+% SPM model MUST model temporal correlations (AR1/FAST)
+% to correctly estimate pattern distinctness
+Cs = [1 -1]; 
 
-% Define Contrast Matrices
-C1 = [1 -1 0 0]; 
-Cs = {C1};
+% 3. Searchlight Analysis
+permute = 0;
+cvManovaSearchlight(resultsDir, slRadius, Cs, permute);
 
-% Execute Searchlight
-stats = cvManovaSearchlight(dirName, slRadius, Cs, permute);
+% 4. ROI Analysis
+maskFile = 'visual_cortex.nii';
+cvManovaRegion(maskFile, resultsDir, Cs);
 
-% Results generated: cms_Ds_c1p1.nii
-% Standardized Pattern Distinctness Map</code></pre>
-                <div class="simulation-output" id="matlab-output">
-                    <div style="color: var(--text-secondary); font-style: italic;">Hit 'Run' to simulate MATLAB output...</div>
+% Output: cms_Ds_c*p*.nii (D-statistic)</code></pre>
+                </div>
+                <div class="terminal-output" id="matlabLog">
+                    <span class="terminal-title">MATLAB Command Window</span>
+                    <div class="log-line">> Idle...</div>
                 </div>
             </div>
 
-            <!-- Python Side -->
+            <!-- Python implementation -->
             <div class="code-card">
                 <div class="card-header">
-                    <span class="lang-badge python-badge">Python (Nilearn)</span>
-                    <button class="run-btn" onclick="runPython()">
+                    <div class="lang-label python-label">
+                        <span style="font-size: 1.2rem;">P</span> Python (Nilearn)
+                    </div>
+                    <button class="run-btn" id="runPython">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        Run Simulation
+                        Run Script
                     </button>
                 </div>
-                <pre><code class="language-python">from cvmanova import SearchlightCvManova, SPMLoader
-from cvmanova.contrasts import ContrastSpec
+                <div class="code-content">
+                    <pre><code class="language-python">from cvmanova_python import SearchlightCvManova
+from cvmanova_python.loaders import SPMLoader
+from cvmanova_python.design import ContrastSpec
 
-# Load from SPM directory
-loader = SPMLoader('./first_level_results')
-X, Y, mask = loader.load()
+# 1. Load Data
+loader = SPMLoader('./stats_dir')
+X, Y, runs = loader.load_data()
 
-# Define Contrast
-c_spec = ContrastSpec(conditions=['A', 'B'])
-contrast = c_spec.difference('A', 'B')
+# 2. Factorial Contrast Design
+cs = ContrastSpec(factors=['condition'], levels=[2])
+contrast = cs.get_interaction()
 
-# Run Searchlight
-sl = SearchlightCvManova(radius=3.0)
-sl.fit(X, Y, mask=mask, contrast=contrast)
+# 3. Initialize Searchlight Estimator
+sl = SearchlightCvManova(radius=3, contrast=contrast)
 
-# Export Results
-sl.to_nifti('searchlight_D.nii')
-sl.plot_glass_brain()</code></pre>
-                <div class="simulation-output" id="python-output">
-                    <div style="color: var(--text-secondary); font-style: italic;">Hit 'Run' to simulate Python output...</div>
+# 4. Compute Pattern Distinctness
+results = sl.fit(X, Y, groups=runs)
+
+# 5. Extract results
+peaks = results.get_peaks(threshold=3.1)
+results.to_nifti('./manova_map.nii')
+
+from nilearn.plotting import plot_glass_brain
+plot_glass_brain('./manova_map.nii')</code></pre>
+                </div>
+                <div class="terminal-output" id="pythonLog">
+                    <span class="terminal-title">Python Interpreter</span>
+                    <div class="log-line">> Idle...</div>
+                </div>
+            </div>
+
+            <!-- Results Preview -->
+            <div class="visual-result" id="resultContainer">
+                <h3 style="margin-bottom: 1.5rem; color: var(--accent-primary);">Nilearn Glass Brain Export</h3>
+                <div class="glass-brain-sim">
+                    <!-- Placeholder SVG for Glass Brain -->
+                    <svg viewBox="0 0 400 200" class="brain-mask">
+                        <path d="M50,100 Q50,20 150,20 Q250,20 350,100 Q350,180 250,180 Q150,180 50,100" fill="gray" stroke="white" stroke-width="2"/>
+                        <path d="M150,20 L150,180 M250,20 L250,180" stroke="white" stroke-opacity="0.2"/>
+                    </svg>
+                    <!-- Simulated clusters -->
+                    <div class="cluster" style="left: 45%; top: 40%;"></div>
+                    <div class="cluster" style="left: 55%; top: 42%; width: 20px; height: 20px;"></div>
+                </div>
+                <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
+                    <strong>Peak Detection:</strong> Voxel [42, -58, 12] | D-stat: 4.82 (p < 0.001)
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-matlab.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
