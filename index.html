@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cvMANOVA Interactive Tutorials</title>
+    <meta name="description" content="Interactive simulations and tutorials for understanding cross-validated MANOVA (cvMANOVA) applied to neuroscience and fMRI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <main class="container">
+        <header>
+            <h1 class="glow-title">cvMANOVA</h1>
+            <p class="subtitle">Interactive Neuroscience Tutorials & Simulations</p>
+            
+            <div class="search-wrapper">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 21L15.0001 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search a keyword (e.g. noise covariance, searchlight)...">
+            </div>
+        </header>
+
+        <div class="grid" id="tutorialGrid">
+            <!-- Tiles will be dynamically populated or hardcoded here -->
+            <a href="tutorials/tutorial_1.html" class="tile" data-keywords="introduction mvpa standard machine learning cross-validation">
+                <div class="tile-number">01</div>
+                <div class="tile-content">
+                    <h2>cvMANOVA vs Standard MVPA</h2>
+                    <p>Visualize how cross-validation handles noise covariance and noise correlation compared to a standard classifier.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_2.html" class="tile" data-keywords="pattern reliability metric d distinctness distance">
+                <div class="tile-number">02</div>
+                <div class="tile-content">
+                    <h2>The Pattern Reliability Metric (D)</h2>
+                    <p>Explore how within-class vs between-class variance affects pattern distinctness (D) across simulated voxels.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_3.html" class="tile" data-keywords="noise covariance spatial correlation fmri euclidian mahalanobis">
+                <div class="tile-number">03</div>
+                <div class="tile-content">
+                    <h2>The Importance of Noise Covariance</h2>
+                    <p>Learn why standard Euclidean distance fails under highly correlated spatial noise compared to Mahalanobis geometry.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_4.html" class="tile" data-keywords="information mapping searchlight analysis radius fmri simulation">
+                <div class="tile-number">04</div>
+                <div class="tile-content">
+                    <h2>Information Mapping (Searchlight)</h2>
+                    <p>Simulate a 2D brain slice to compute the cvMANOVA D-statistic interactively using a sliding spherical searchlight.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_5.html" class="tile" data-keywords="statistical inference bias unbiased null hypothesis">
+                <div class="tile-number">05</div>
+                <div class="tile-content">
+                    <h2>Why Cross-Validation? (Inference)</h2>
+                    <p>Discover how cross-validation fixes the positive bias of standard distance metrics under the null hypothesis.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_6.html" class="tile" data-keywords="case study allefeld haynes 2014 original paper review">
+                <div class="tile-number">06</div>
+                <div class="tile-content">
+                    <h2>Case Study: Allefeld & Haynes (2014)</h2>
+                    <p>An interactive breakdown of the foundational cvMANOVA paper addressing high-dimensional fMRI data.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_7.html" class="tile" data-keywords="linear discriminant contrast ldc distance calculation comparison">
+                <div class="tile-number">07</div>
+                <div class="tile-content">
+                    <h2>cvMANOVA vs. LDC</h2>
+                    <p>Compare Linear Discriminant Contrast (LDC) to cvMANOVA and understand the benefits of standardized effect sizes.</p>
+                </div>
+            </a>
+
+            <a href="tutorials/tutorial_8.html" class="tile" data-keywords="power analysis sample size effect simulation trials voxels">
+                <div class="tile-number">08</div>
+                <div class="tile-content">
+                    <h2>Power Analysis & Sample Size</h2>
+                    <p>Adjust voxels, trials, and true effect size to dynamically see resulting distinctness, p-values, and statistical power.</p>
+                </div>
+            </a>
+            
+            <a href="#" class="tile coming-soon" style="pointer-events: none;">
+                <div class="tile-number">...</div>
+                <div class="tile-content">
+                    <h2>More Coming Soon</h2>
+                    <p>Check back to discover more intuitive tools as new papers surface.</p>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <script src="assets/main.js"></script>
+</body>
+</html>
