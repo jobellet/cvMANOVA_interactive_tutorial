@@ -3,44 +3,242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>cvMANOVA vs Standard MVPA</title>
+    <title>The Pattern Reliability Metric (D) | cvMANOVA Tutorial</title>
+    <meta name="description" content="Explore how within-class and between-class variance determine pattern distinctness (D) in cvMANOVA.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/style.css">
+    <style>
+        .sim-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+        .sim-box {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 24px; padding: 2rem; backdrop-filter: var(--glass-blur);
+        }
+        canvas { border-radius: 12px; cursor: crosshair; }
+        .kpi-row { display: flex; gap: 1rem; margin: 1.5rem 0; }
+        .kpi {
+            flex: 1; background: rgba(255,255,255,0.04); border-radius: 14px;
+            padding: 1rem 0.5rem; text-align: center;
+        }
+        .kpi-val { font-size: 1.7rem; font-weight: 800; }
+        .kpi-lbl { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-secondary); }
+        .controls { display: flex; flex-direction: column; gap: 1rem; }
+        .ctrl-row { display: flex; flex-direction: column; gap: 0.4rem; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.88rem; color: var(--text-secondary); }
+        input[type=range] {
+            width: 100%; appearance: none; height: 5px; border-radius: 10px;
+            background: rgba(255,255,255,0.1); outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none; width: 17px; height: 17px; border-radius: 50%;
+            background: var(--accent-secondary); cursor: pointer;
+        }
+        .formula-box {
+            background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.25);
+            border-radius: 16px; padding: 1.5rem; font-size: 0.95rem;
+            color: var(--text-secondary); margin: 1.5rem 0;
+        }
+        .formula-box code { color: #a5b4fc; font-size: 1rem; }
+        .legend { display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.88rem; color: var(--text-secondary); }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 0.3rem; vertical-align: middle; }
+        .hint { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem; font-style: italic; }
+        @media(max-width:800px){ .sim-grid{ grid-template-columns:1fr; } }
+    </style>
 </head>
 <body>
     <div class="background-mesh"></div>
-    
     <nav class="navbar">
         <a href="../index.html" class="back-button">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Back to Home
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back to Tutorials
         </a>
+        <div class="tutorial-id">Tutorial 02</div>
     </nav>
 
     <main class="tutorial-content">
-        <h1 class="glow-title" style="font-size: 3rem;">cvMANOVA vs Standard MVPA</h1>
-        <p class="subtitle" style="margin-bottom: 2rem;">Visualize how cross-validation handles noise covariance and noise correlation compared to a standard classifier.</p>
+        <header>
+            <h1 class="glow-title">The Pattern Reliability Metric D</h1>
+            <p class="subtitle">Drag conditions in voxel space to intuitively build the cvMANOVA distinctness statistic.</p>
+        </header>
 
-        <div class="simulation-placeholder">
-            [ Interactive Simulation Widget Goes Here ]
+        <div class="formula-box">
+            Pattern distinctness: <code>D = trace( B' X'X B Σ⁻¹ ) / n</code><br><br>
+            D compares the <strong>between-class variance</strong> (how far apart conditions are) to the <strong>within-class variance</strong> (the noise structure). The larger D, the more reliably distinct the neural patterns are.
         </div>
 
-        <section style="margin-top: 3rem; line-height: 1.8;">
-            <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Concept Overview</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-                Standard Machine Learning approaches like Support Vector Machines (SVMs) often ignore the specific correlation 
-                structure of the noise between different voxels. cvMANOVA explicitly incorporates this through the noise covariance matrix.
-            </p>
-            <p style="color: var(--text-secondary);">
-                In this interactive tutorial, you will be able to adjust the <strong>noise variance</strong> and <strong>spatial correlation</strong>
-                to see exactly when standard Euclidean distance breaks down and produces false positives.
-            </p>
+        <div class="kpi-row">
+            <div class="kpi"><div class="kpi-val" id="dVal" style="color:#a5b4fc;">0.00</div><div class="kpi-lbl">D̂ (Pattern Distinctness)</div></div>
+            <div class="kpi"><div class="kpi-val" id="betweenVal" style="color:#34d399;">0.00</div><div class="kpi-lbl">Between-class dist</div></div>
+            <div class="kpi"><div class="kpi-val" id="withinVal" style="color:#f87171;">0.00</div><div class="kpi-lbl">Within-class σ²</div></div>
+        </div>
+
+        <div class="sim-grid">
+            <div class="sim-box">
+                <div class="legend">
+                    <span><span class="legend-dot" style="background:#60a5fa;"></span>Condition A (drag me)</span>
+                    <span><span class="legend-dot" style="background:#f87171;"></span>Condition B (drag me)</span>
+                    <span><span class="legend-dot" style="background:rgba(255,255,255,0.15);"></span>Noise cloud</span>
+                </div>
+                <canvas id="voxelCanvas" width="520" height="400"></canvas>
+                <p class="hint">💡 Click and drag either centroid (large dot) to reposition conditions in voxel space.</p>
+            </div>
+            <div class="sim-box">
+                <h3 style="margin-bottom:1rem;">Adjust Noise</h3>
+                <div class="controls">
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span>Within-class Variance (σ²)</span><span id="noiseLabel">0.8</span></div>
+                        <input type="range" id="noiseSlider" min="0.1" max="3.0" step="0.1" value="0.8" oninput="redraw()">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span>Noise Correlation (ρ)</span><span id="corrLabel">0.0</span></div>
+                        <input type="range" id="corrSlider" min="-0.8" max="0.8" step="0.05" value="0.0" oninput="redraw()">
+                    </div>
+                    <div class="ctrl-row">
+                        <div class="ctrl-label"><span>Samples per Condition</span><span id="sampLabel">25</span></div>
+                        <input type="range" id="sampSlider" min="5" max="80" step="5" value="25" oninput="redraw()">
+                    </div>
+                </div>
+                <div class="formula-box" style="margin-top:2rem; font-size:0.88rem;">
+                    <strong>Interpretation:</strong><br>
+                    D ≫ 0 → conditions are reliably distinct<br>
+                    D ≈ 0 → under null hypothesis<br>
+                    D &lt; 0 → noise artifact (expect ~50% of the time when true D = 0)
+                </div>
+            </div>
+        </div>
+
+        <section style="margin-top:3rem;">
+            <h2 style="margin-bottom:1rem;">What drives D?</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>Between-class Distance ↑</h2>
+                        <p>Moving the centroids farther apart increases D. The brain encodes distinct states reliably.</p>
+                    </div>
+                </div>
+                <div class="tile" style="pointer-events:none; animation:none;">
+                    <div class="tile-content">
+                        <h2>Within-class Variance ↑</h2>
+                        <p>More noise reduces D. Even a large true effect becomes undetectable in high-noise regimes.</p>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
+    <script>
+    const canvas = document.getElementById('voxelCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    let c1 = {x: W*0.35, y: H*0.5};
+    let c2 = {x: W*0.65, y: H*0.5};
+    let dragging = null;
+
+    function randn() {
+        let u=0,v=0;
+        while(u===0)u=Math.random();
+        while(v===0)v=Math.random();
+        return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    }
+
+    function sampleCorrelated(rho) {
+        const z1 = randn(), z2 = randn();
+        return {x: z1, y: rho*z1 + Math.sqrt(1-rho*rho)*z2};
+    }
+
+    function redraw() {
+        const noise = parseFloat(document.getElementById('noiseSlider').value);
+        const rho   = parseFloat(document.getElementById('corrSlider').value);
+        const N     = parseInt(document.getElementById('sampSlider').value);
+        document.getElementById('noiseLabel').textContent = noise.toFixed(1);
+        document.getElementById('corrLabel').textContent = rho.toFixed(2);
+        document.getElementById('sampLabel').textContent = N;
+
+        const s = Math.sqrt(noise) * 55;
+
+        ctx.clearRect(0,0,W,H);
+        ctx.fillStyle='rgba(15,23,42,0.95)';
+        ctx.fillRect(0,0,W,H);
+
+        // Grid lines
+        ctx.strokeStyle='rgba(255,255,255,0.04)';
+        ctx.lineWidth=1;
+        for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+        for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+        // Covariance ellipse (sketch with noise circle scaled by rho)
+        [c1,c2].forEach((c,i)=>{
+            ctx.save();
+            ctx.translate(c.x, c.y);
+            ctx.rotate(Math.PI/4);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, s*(1+rho*0.5), s*(1-rho*0.5), 0, 0, Math.PI*2);
+            ctx.fillStyle = i===0 ? 'rgba(59,130,246,0.07)' : 'rgba(248,113,113,0.07)';
+            ctx.fill();
+            ctx.strokeStyle = i===0 ? 'rgba(59,130,246,0.25)' : 'rgba(248,113,113,0.25)';
+            ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+            ctx.restore();
+        });
+
+        // Scatter points
+        for(let i=0;i<N;i++){
+            const r1 = sampleCorrelated(rho);
+            const r2 = sampleCorrelated(rho);
+            ctx.beginPath(); ctx.arc(c1.x+r1.x*s, c1.y+r1.y*s, 3.5, 0, Math.PI*2);
+            ctx.fillStyle='rgba(96,165,250,0.55)'; ctx.fill();
+            ctx.beginPath(); ctx.arc(c2.x+r2.x*s, c2.y+r2.y*s, 3.5, 0, Math.PI*2);
+            ctx.fillStyle='rgba(248,113,113,0.55)'; ctx.fill();
+        }
+
+        // Distance line
+        ctx.beginPath(); ctx.moveTo(c1.x,c1.y); ctx.lineTo(c2.x,c2.y);
+        ctx.strokeStyle='rgba(165,180,252,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+
+        // Centroids
+        [[c1,'#3b82f6'],[c2,'#f87171']].forEach(([c,col])=>{
+            ctx.beginPath(); ctx.arc(c.x,c.y,10,0,Math.PI*2);
+            ctx.fillStyle=col; ctx.fill();
+            ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+        });
+
+        // Compute D
+        const dx = (c2.x-c1.x)/55;
+        const dy = (c2.y-c1.y)/55;
+        const between = Math.sqrt(dx*dx+dy*dy);
+        const Dcv = (between*between) / (noise*(1+rho*rho));
+        const Ddisp = Math.max(-5, Math.min(20, Dcv));
+        document.getElementById('dVal').textContent = Ddisp.toFixed(2);
+        document.getElementById('dVal').style.color = Ddisp >= 0 ? '#a5b4fc' : '#f87171';
+        document.getElementById('betweenVal').textContent = between.toFixed(2);
+        document.getElementById('withinVal').textContent = noise.toFixed(2);
+    }
+
+    // Drag logic
+    function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const scaleX = W / r.width, scaleY = H / r.height;
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return {x: (cx - r.left)*scaleX, y: (cy - r.top)*scaleY};
+    }
+    canvas.addEventListener('mousedown', e => {
+        const p = getPos(e);
+        if(Math.hypot(p.x-c1.x, p.y-c1.y)<18) dragging='c1';
+        else if(Math.hypot(p.x-c2.x, p.y-c2.y)<18) dragging='c2';
+    });
+    canvas.addEventListener('mousemove', e => {
+        if(!dragging) return;
+        const p = getPos(e);
+        if(dragging==='c1') c1={x:p.x,y:p.y};
+        else c2={x:p.x,y:p.y};
+        redraw();
+    });
+    canvas.addEventListener('mouseup', () => dragging=null);
+    canvas.addEventListener('mouseleave', () => dragging=null);
+
+    redraw();
+    </script>
 </body>
 </html>
